@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <stdlib.h>
 #include "msppriv.h"
+
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 
@@ -105,6 +106,7 @@ msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 	tot_len = sizeof(msp_blk1_t) * t.n_blk + (ctg_len + 1) + (name_len + 1);
 	tot_cnt = (tot_len + sizeof(msp_blk1_t) - 1) / sizeof(msp_blk1_t);
 	b = (msp_bed1_t*)calloc(sizeof(msp_bed1_t) + sizeof(msp_blk1_t) * tot_cnt, 1);
+	b->cid = -1;
 	b->ctg = (char*)&b->blk[t.n_blk];
 	b->name = t.name? b->ctg + ctg_len + 1 : 0;
 	memcpy(b->ctg, t.ctg, ctg_len + 1);

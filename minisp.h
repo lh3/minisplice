@@ -12,17 +12,29 @@ typedef struct {
 } msp_file_t;
 
 typedef struct {
+	int32_t n, m;
+	char **a;
+	void *h;
+} msp_strmap_t;
+
+typedef struct {
 	int64_t st, en;
 } msp_blk1_t;
 
 typedef struct {
 	int64_t st, en;
 	int64_t st2, en2; // thickStart and thickEnd
-	int64_t score;
-	int32_t n_blk, strand;
+	int32_t cid, score, strand;
+	int32_t n_blk;
 	char *ctg, *name;
 	msp_blk1_t blk[];
 } msp_bed1_t;
+
+typedef struct {
+	int64_t n, m;
+	msp_bed1_t *a;
+	msp_strmap_t *h;
+} msp_bed_t;
 
 extern int msp_verbose;
 
@@ -32,7 +44,14 @@ extern "C" {
 
 msp_file_t *msp_bed_open(const char *fn);
 void msp_file_close(msp_file_t *f);
+msp_bed_t *msp_bed_read(msp_file_t *fp, uint32_t *err);
 msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err);
+
+// strmap
+msp_strmap_t *msp_strmap_init(void);
+void msp_strmap_destroy(msp_strmap_t *m);
+int32_t msp_strmap_add(msp_strmap_t *m, const char *s);
+int32_t msp_strmap_get(const msp_strmap_t *m, const char *s);
 
 #ifdef __cplusplus
 }
