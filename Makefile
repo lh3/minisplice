@@ -2,7 +2,7 @@ CC=			gcc
 CFLAGS=		-g -Wall -Wc++-compat -O3
 CPPFLAGS=
 INCLUDES=
-OBJS=		reader.o misc.o strmap.o
+OBJS=		reader.o misc.o strmap.o bed.o
 PROG=		minisplice
 LIBS=		-lz -lm
 
@@ -30,7 +30,8 @@ depend:
 
 # DO NOT DELETE
 
+bed.o: msppriv.h minisp.h ksort.h
 main.o: msppriv.h minisp.h ketopt.h
 misc.o: msppriv.h minisp.h
-reader.o: msppriv.h minisp.h kseq.h ksort.h
+reader.o: msppriv.h minisp.h kseq.h
 strmap.o: msppriv.h minisp.h khashl.h

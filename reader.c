@@ -7,12 +7,6 @@
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
 
-#include "ksort.h"
-#define msp196x_key(a) ((a).x)
-KRADIX_SORT_INIT(msp196x, msp196_t, msp196x_key, 64)
-#define msp196y_key(a) ((a).y)
-KRADIX_SORT_INIT(msp196y, msp196_t, msp196y_key, 64)
-
 /****************
  * General file *
  ****************/
@@ -176,30 +170,4 @@ void msp_bed_destroy(msp_bed_t *bed)
 	free(bed->a);
 	msp_strmap_destroy(bed->h);
 	free(bed);
-}
-
-void msp_bed_sort(msp_bed_t *bed)
-{
-	int64_t i, i0;
-	msp196_t *a;
-	msp_bed1_t **t;
-	a = MSP_MALLOC(msp196_t, bed->n);
-	t = MSP_MALLOC(msp_bed1_t*, bed->n);
-	for (i = 0; i < bed->n; ++i) {
-		a[i].x = bed->a[i]->cid;
-		a[i].y = bed->a[i]->st;
-		a[i].z = i;
-		t[i] = bed->a[i];
-	}
-	radix_sort_msp196x(a, a + bed->n);
-	for (i0 = 0, i = 1; i <= bed->n; ++i) {
-		if (i == bed->n || a[i0].x != a[i].x) {
-			radix_sort_msp196y(&a[i0], &a[i]);
-			i0 = i;
-		}
-	}
-	for (i = 0; i < bed->n; ++i)
-		bed->a[i] = t[a[i].z];
-	free(t);
-	free(a);
 }
