@@ -2,10 +2,10 @@
 #include "msppriv.h"
 
 #include "ksort.h"
-#define msp196x_key(a) ((a).x)
-KRADIX_SORT_INIT(msp196x, msp196_t, msp196x_key, 64)
-#define msp196y_key(a) ((a).y)
-KRADIX_SORT_INIT(msp196y, msp196_t, msp196y_key, 64)
+#define msp192x_key(a) ((a).x)
+KRADIX_SORT_INIT(msp192x, msp192_t, msp192x_key, 64)
+#define msp192y_key(a) ((a).y)
+KRADIX_SORT_INIT(msp192y, msp192_t, msp192y_key, 64)
 
 void msp_bed_destroy(msp_bed_t *bed)
 {
@@ -32,10 +32,10 @@ int msp_bed_is_sorted(const msp_bed_t *bed)
 void msp_bed_sort(msp_bed_t *bed)
 {
 	int64_t i, i0;
-	msp196_t *a;
+	msp192_t *a;
 	msp_bed1_t **t;
 	if (msp_bed_is_sorted(bed)) return; // no need to sort
-	a = MSP_MALLOC(msp196_t, bed->n);
+	a = MSP_MALLOC(msp192_t, bed->n);
 	t = MSP_MALLOC(msp_bed1_t*, bed->n);
 	for (i = 0; i < bed->n; ++i) {
 		a[i].x = bed->a[i]->cid;
@@ -43,10 +43,10 @@ void msp_bed_sort(msp_bed_t *bed)
 		a[i].z = i;
 		t[i] = bed->a[i];
 	}
-	radix_sort_msp196x(a, a + bed->n);
+	radix_sort_msp192x(a, a + bed->n);
 	for (i0 = 0, i = 1; i <= bed->n; ++i) {
 		if (i == bed->n || a[i0].x != a[i].x) {
-			radix_sort_msp196y(&a[i0], &a[i]);
+			radix_sort_msp192y(&a[i0], &a[i]);
 			i0 = i;
 		}
 	}
@@ -90,4 +90,69 @@ void msp_bed_format(kstring_t *out, const msp_bed1_t *b)
 				msp_sprintf_lite(out, "%ld,", b->blk[i].st - b->st);
 		}
 	}
+}
+
+typedef struct {
+	int64_t n, m;
+	msp192_t *a;
+} msp192a_t;
+
+static void msp_reg_merge(const msp_bed_t *bed, const msp_bedctg_t *c, msp192a_t *t, int32_t strand)
+{
+	int64_t st, en, i;
+	t->n = t->m = 0, t->a = 0;
+	if (c->n == 0) return;
+	st = bed->a[c->off]->st, en = bed->a[c->off]->en;
+	for (i = c->off + 1; i < c->off + c->n; ++i) {
+		if (bed->a[i]->n_blk < 2 || bed->a[i]->strand * strand <= 0) continue;
+		if (bed->a[i]->st > en) {
+			MSP_GROW(msp192_t, t->a, t->n, t->m);
+			t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+			st = bed->a[i]->st, en = bed->a[i]->en;
+		} else en = en > bed->a[i]->en? en : bed->a[i]->en;
+	}
+	MSP_GROW(msp192_t, t->a, t->n, t->m);
+	t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+}
+
+static void msp_reg_sub(msp192a_t *t, const msp192a_t *a, const msp192a_t *b)
+{
+	int64_t i, j;
+	if (a->n < 1) return;
+	for (i = j = 0; i < a->n; ++i) {
+		int64_t k, st1 = a->a[i].x, en1 = a->a[i].y, x;
+		while (j < b->n && b->a[j].y <= st1) {} // skip b-regions w/o overlaps
+		for (k = j, x = st1; k < b->n; ++k) { // adapted from "bedtk sub"
+			int64_t st0 = b->a[k].x, en0 = b->a[k].y;
+			if (st0 < st1) st0 = st1;
+			if (en0 > en1) en0 = en1;
+			if (st0 > x) {
+				MSP_GROW(msp192_t, t->a, t->n, t->m);
+				t->a[t->n].x = x, t->a[t->n].y = st0, t->a[t->n++].z = a->a[i].z;
+			}
+			x = en0;
+		}
+		if (x < en1) {
+			MSP_GROW(msp192_t, t->a, t->n, t->m);
+			t->a[t->n].x = x, t->a[t->n].y = en1, t->a[t->n++].z = a->a[i].z;
+		}
+	}
+}
+
+msp192_t *msp_bed_gen_negreg(const msp_bed_t *bed, int32_t cid, int64_t *nn)
+{
+	int64_t i;
+	msp192a_t a[2], t;
+	const msp_bedctg_t *c;
+	if (cid >= bed->h->n) return 0;
+	c = &bed->c[cid];
+	msp_reg_merge(bed, c, &a[0], 1);
+	msp_reg_merge(bed, c, &a[1], -1);
+	t.n = t.m = 0, t.a = 0;
+	msp_reg_sub(&t, &a[0], &a[1]);
+	msp_reg_sub(&t, &a[1], &a[0]);
+	radix_sort_msp192x(t.a, t.a + t.n);
+	for (i = 0; i < t.n; ++i) t.a[i].z *= -1; // flip the strand
+	*nn = t.n;
+	return t.a;
 }
