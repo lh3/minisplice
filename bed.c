@@ -16,11 +16,23 @@ void msp_bed_destroy(msp_bed_t *bed)
 	free(bed);
 }
 
+int msp_bed_is_sorted(const msp_bed_t *bed)
+{
+	int64_t i;
+	for (i = 1; i < bed->n; ++i) {
+		const msp_bed1_t *p = bed->a[i-1], *q = bed->a[i];
+		if (!(p->cid < q->cid || (p->cid == q->cid && p->st <= q->st)))
+			break;
+	}
+	return i == bed->n? 1 : 0;
+}
+
 void msp_bed_sort(msp_bed_t *bed)
 {
 	int64_t i, i0;
 	msp196_t *a;
 	msp_bed1_t **t;
+	if (msp_bed_is_sorted(bed)) return; // no need to sort
 	a = MSP_MALLOC(msp196_t, bed->n);
 	t = MSP_MALLOC(msp_bed1_t*, bed->n);
 	for (i = 0; i < bed->n; ++i) {
@@ -47,6 +59,7 @@ msp_bedview_t *msp_bed_select_sp(const msp_bed_t *bed)
 	msp_bedview_t *bv;
 	int64_t i0, i, max_en = 0;
 	if (bed->n == 0) return 0;
+	if (!msp_bed_is_sorted(bed)) return 0;
 	bv = MSP_CALLOC(msp_bedview_t, 1);
 	bv->bed = bed;
 	for (i0 = 0, max_en = bed->a[0]->en, i = 1; i <= bed->n; ++i) {

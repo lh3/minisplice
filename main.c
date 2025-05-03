@@ -48,15 +48,19 @@ int main_bed2bed(int argc, char *argv[])
 	kstring_t out = { 0, 0, 0 };
 	msp_bed_t *bed;
 	int64_t i;
-	int c;
+	int c, to_sort = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "s", 0)) >= 0) {
+		if (c == 's') to_sort = 1;
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice bed2bed [options] <in.bed>\n");
+		fprintf(stderr, "Options:\n");
+		fprintf(stderr, "  -s     sort\n");
 		return 1;
 	}
 	bed = msp_bed_read(argv[o.ind]);
+	if (to_sort) msp_bed_sort(bed);
 	for (i = 0; i < bed->n; ++i) {
 		msp_bed_format(&out, bed->a[i]);
 		puts(out.s);
