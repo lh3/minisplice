@@ -24,4 +24,6 @@ typedef struct {
 	msp_blk1_t blk[];
 } msp_bed1_t;
 
+extern int msp_verbose;
+
 #endif

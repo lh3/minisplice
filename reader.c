@@ -26,11 +26,11 @@ msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 	*err = 0;
 	buf = (kstring_t*)fp->buf;
 	ks = (kstream_t*)fp->fp;
-	memset(&tmp, 0, sizeof(tmp));
+	memset(&t, 0, sizeof(t));
 
 	ret = ks_getuntil(ks, KS_SEP_LINE, buf, 0);
 	if (ret < 0) return 0; // TODO: detect error code
-	for (p = q = buf->a, i = 0;; ++p) {
+	for (p = q = buf->s, i = 0;; ++p) {
 		if (*p == 0 || *p == '\t') {
 			int32_t c = *p; // the original character
 			*p = 0;
