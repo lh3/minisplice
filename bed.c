@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "msppriv.h"
 
 #include "ksort.h"
@@ -54,7 +55,7 @@ void msp_bed_sort(msp_bed_t *bed)
 	free(a);
 }
 
-msp_bedview_t *msp_bed_select_sp(const msp_bed_t *bed)
+msp_bedview_t *msp_bed_select_train(const msp_bed_t *bed)
 {
 	msp_bedview_t *bv;
 	int64_t i0, i, max_en = 0;
@@ -63,7 +64,7 @@ msp_bedview_t *msp_bed_select_sp(const msp_bed_t *bed)
 	bv = MSP_CALLOC(msp_bedview_t, 1);
 	bv->bed = bed;
 	for (i0 = 0, max_en = bed->a[0]->en, i = 1; i <= bed->n; ++i) {
-		if (i == bed->n || bed->a[i0]->cid != bed->a[i]->cid || bed->a[i0]->st > max_en) {
+		if (i == bed->n || bed->a[i0]->cid != bed->a[i]->cid || bed->a[i]->st > max_en) {
 			int64_t j, nf = 0, nr = 0;
 			for (j = i0; j < i; ++j) {
 				if (bed->a[j]->n_blk > 1) {
@@ -73,12 +74,18 @@ msp_bedview_t *msp_bed_select_sp(const msp_bed_t *bed)
 			}
 			if (nf + nr > 0 && nf * nr == 0) {
 				for (j = i0; j < i; ++j) {
+					if (bed->a[j]->n_blk < 2) continue;
 					MSP_GROW(msp_bed1_p, bv->a, bv->n, bv->m);
 					bv->a[bv->n++] = bed->a[j];
 				}
 			}
-			max_en = max_en > bed->a[i]->en? max_en : bed->a[i]->en;
-			i = i0;
+			if (i < bed->n) {
+				if (bed->a[i0]->cid != bed->a[i]->cid)
+					max_en = 0;
+				else
+					max_en = max_en > bed->a[i]->en? max_en : bed->a[i]->en;
+			}
+			i0 = i;
 		} else {
 			max_en = max_en > bed->a[i]->en? max_en : bed->a[i]->en;
 		}

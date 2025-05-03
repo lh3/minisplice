@@ -47,23 +47,36 @@ int main_bed2bed(int argc, char *argv[])
 	ketopt_t o = KETOPT_INIT;
 	kstring_t out = { 0, 0, 0 };
 	msp_bed_t *bed;
+	msp_bedview_t *bv = 0;
 	int64_t i;
-	int c, to_sort = 0;
+	int c, to_sort = 0, for_train = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "s", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "st", 0)) >= 0) {
 		if (c == 's') to_sort = 1;
+		else if (c == 't') for_train = to_sort = 1;
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice bed2bed [options] <in.bed>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  -s     sort\n");
+		fprintf(stderr, "  -t     choose training genes\n");
 		return 1;
 	}
 	bed = msp_bed_read(argv[o.ind]);
 	if (to_sort) msp_bed_sort(bed);
-	for (i = 0; i < bed->n; ++i) {
-		msp_bed_format(&out, bed->a[i]);
-		puts(out.s);
+	if (for_train) bv = msp_bed_select_train(bed);
+	if (bv) {
+		for (i = 0; i < bv->n; ++i) {
+			msp_bed_format(&out, bv->a[i]);
+			puts(out.s);
+		}
+		free(bv->a);
+		free(bv);
+	} else {
+		for (i = 0; i < bed->n; ++i) {
+			msp_bed_format(&out, bed->a[i]);
+			puts(out.s);
+		}
 	}
 	msp_bed_destroy(bed);
 	return 0;
