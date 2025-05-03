@@ -56,6 +56,7 @@ void msp_file_close(msp_file_t *f);
 msp_bed_t *msp_bed_read(const char *fn);
 void msp_bed_sort(msp_bed_t *bed);
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
+void msp_bed_destroy(msp_bed_t *bed);
 
 // strmap
 msp_strmap_t *msp_strmap_init(void);

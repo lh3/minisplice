@@ -1,3 +1,4 @@
+#include <stdio.h> // for debugging
 #include "msppriv.h"
 #include "khashl.h"
 KHASHL_MAP_INIT(KH_LOCAL, strmap_t, strmap, const char*, int32_t, kh_hash_str, kh_eq_str)

@@ -20,6 +20,7 @@ static int usage(FILE *fp)
 int main(int argc, char *argv[])
 {
 	int ret = 0;
+	msp_realtime();
 	if (argc == 1) return usage(stdout);
 	else if (strcmp(argv[1], "bed2bed") == 0) main_bed2bed(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
@@ -43,32 +44,23 @@ int main(int argc, char *argv[])
 
 int main_bed2bed(int argc, char *argv[])
 {
-	msp_file_t *fp;
+	ketopt_t o = KETOPT_INIT;
 	kstring_t out = { 0, 0, 0 };
-	int rc;
-	msp_bed1_t *p;
+	msp_bed_t *bed;
+	int64_t i;
+	int c;
 
-	if (argc == 1) {
-		fprintf(stderr, "Usage: minisplice bed2bed <in.bed>\n");
+	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
+	}
+	if (argc - o.ind < 1) {
+		fprintf(stderr, "Usage: minisplice bed2bed [options] <in.bed>\n");
 		return 1;
 	}
-
-	fp = msp_bed_open(argv[1]);
-	while (msp_bed_read1(fp, &p) != -1) {
-		int32_t i;
-		out.l = 0;
-		for (i = 0; i < p->n_blk; ++i) {
-			msp_sprintf_lite(&out, "%s\t%ld\t%ld\t", p->ctg, p->blk[i].st, p->blk[i].en);
-			if (p->name) msp_sprintf_lite(&out, "%s", p->name);
-			else msp_sprintf_lite(&out, ".");
-			if (p->score >= 0) msp_sprintf_lite(&out, "\t%ld", p->score);
-			else msp_sprintf_lite(&out, ".");
-			msp_sprintf_lite(&out, "\t%c", p->strand == 0? '.' : p->strand > 0? '+' : '-');
-			msp_sprintf_lite(&out, "\n");
-		}
-		fwrite(out.s, 1, out.l, stdout);
-		free(p);
+	bed = msp_bed_read(argv[o.ind]);
+	for (i = 0; i < bed->n; ++i) {
+		msp_bed_format(&out, bed->a[i]);
+		puts(out.s);
 	}
-	msp_file_close(fp);
+	msp_bed_destroy(bed);
 	return 0;
 }

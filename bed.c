@@ -6,6 +6,16 @@ KRADIX_SORT_INIT(msp196x, msp196_t, msp196x_key, 64)
 #define msp196y_key(a) ((a).y)
 KRADIX_SORT_INIT(msp196y, msp196_t, msp196y_key, 64)
 
+void msp_bed_destroy(msp_bed_t *bed)
+{
+	int64_t i;
+	for (i = 0; i < bed->n; ++i)
+		free(bed->a[i]);
+	free(bed->a);
+	msp_strmap_destroy(bed->h);
+	free(bed);
+}
+
 void msp_bed_sort(msp_bed_t *bed)
 {
 	int64_t i, i0;
@@ -61,4 +71,26 @@ msp_bedview_t *msp_bed_select_sp(const msp_bed_t *bed)
 		}
 	}
 	return bv;
+}
+
+void msp_bed_format(kstring_t *out, const msp_bed1_t *b)
+{
+	int32_t i;
+	out->l = 0;
+	msp_sprintf_lite(out, "%s\t%ld\t%ld\t", b->ctg, b->st, b->en);
+	if (b->name) msp_sprintf_lite(out, "%s", b->name);
+	else msp_sprintf_lite(out, ".");
+	if (b->score >= 0) msp_sprintf_lite(out, "\t%d", b->score);
+	else msp_sprintf_lite(out, "\t.");
+	if (b->st2 != b->st || b->en2 != b->en || b->n_blk > 0) {
+		msp_sprintf_lite(out, "\t%ld\t%ld", b->st2, b->en2);
+		if (b->n_blk > 0) {
+			msp_sprintf_lite(out, "\t.\t%d\t", b->n_blk);
+			for (i = 0; i < b->n_blk; ++i)
+				msp_sprintf_lite(out, "%ld,", b->blk[i].en - b->blk[i].st);
+			msp_sprintf_lite(out, "\t");
+			for (i = 0; i < b->n_blk; ++i)
+				msp_sprintf_lite(out, "%ld,", b->blk[i].st - b->st);
+		}
+	}
 }

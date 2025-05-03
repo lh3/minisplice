@@ -145,6 +145,7 @@ msp_bed_t *msp_bed_read(const char *fn)
 	fp = msp_bed_open(fn);
 	if (fp == 0) return 0;
 	bed = MSP_CALLOC(msp_bed_t, 1);
+	bed->h = msp_strmap_init();
 	while ((rc = msp_bed_read1(fp, &b)) != -1) {
 		++lineno;
 		if (b == 0) {
@@ -160,14 +161,4 @@ msp_bed_t *msp_bed_read(const char *fn)
 	if (msp_verbose >= 3)
 		fprintf(stderr, "[M::%s] read %ld BED records\n", __func__, (long)bed->n);
 	return bed;
-}
-
-void msp_bed_destroy(msp_bed_t *bed)
-{
-	int64_t i;
-	for (i = 0; i < bed->n; ++i)
-		free(bed->a[i]);
-	free(bed->a);
-	msp_strmap_destroy(bed->h);
-	free(bed);
 }
