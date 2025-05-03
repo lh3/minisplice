@@ -43,7 +43,7 @@ msp_file_t *msp_bed_open(const char *fn)
 	return f;
 }
 
-msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
+int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 {
 	int32_t i, ret, ctg_len = 0, name_len = 0, tot_len, tot_cnt;
 	kstream_t *ks;
@@ -54,13 +54,12 @@ msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 	assert(fp != 0 && fp->fp != 0 && fp->type == MSP_FT_BED);
 
 	if (fp->buf == 0) msp_file_init_buf(fp);
-	*err = 0;
 	buf = (kstring_t*)fp->buf;
 	ks = (kstream_t*)fp->fp;
 	memset(&t, 0, sizeof(t));
 
 	ret = ks_getuntil(ks, KS_SEP_LINE, buf, 0);
-	if (ret < 0) return 0; // TODO: detect error code
+	if (ret < 0) return ret;
 	for (p = q = buf->s, i = 0;; ++p) {
 		if (*p == 0 || *p == '\t') {
 			int32_t c = *p; // the original character
@@ -99,9 +98,9 @@ msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 		}
 	}
 
-	if (i < 3) return 0; // need at least three fields
-	if (t.st < 0 || t.en < 0 || t.st > t.en || ctg_len == 0) return 0;
-	if (t.st2 < t.st || t.en2 > t.en || t.st2 > t.en2) return 0;
+	if (i < 3) return -2; // need at least three fields
+	if (t.st < 0 || t.en < 0 || t.st > t.en || ctg_len == 0) return -3;
+	if (t.st2 < t.st || t.en2 > t.en || t.st2 > t.en2) return -3;
 
 	tot_len = sizeof(msp_blk1_t) * t.n_blk + (ctg_len + 1) + (name_len + 1);
 	tot_cnt = (tot_len + sizeof(msp_blk1_t) - 1) / sizeof(msp_blk1_t);
@@ -121,5 +120,18 @@ msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 			p->en = p->st + strtol(bl, &bl, 10); ++bl;
 		}
 	}
-	return b;
+	*b_ = b;
+	return 0;
+}
+
+msp_bed_t *msp_bed_read(const char *fn)
+{
+	msp_bed_t *bed;
+	msp_bed1_t *b;
+	msp_file_t *fp;
+
+	fp = msp_bed_open(fn);
+	if (fp == 0) return 0;
+	bed = MSP_CALLOC(msp_bed_t, 1);
+	return bed;
 }

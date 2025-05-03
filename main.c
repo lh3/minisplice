@@ -45,7 +45,7 @@ int main_bed2bed(int argc, char *argv[])
 {
 	msp_file_t *fp;
 	kstring_t out = { 0, 0, 0 };
-	uint32_t err;
+	int rc;
 	msp_bed1_t *p;
 
 	if (argc == 1) {
@@ -54,7 +54,7 @@ int main_bed2bed(int argc, char *argv[])
 	}
 
 	fp = msp_bed_open(argv[1]);
-	while ((p = msp_bed_read1(fp, &err)) != NULL) {
+	while (msp_bed_read1(fp, &p) != -1) {
 		int32_t i;
 		out.l = 0;
 		for (i = 0; i < p->n_blk; ++i) {

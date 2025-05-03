@@ -44,8 +44,8 @@ extern "C" {
 
 msp_file_t *msp_bed_open(const char *fn);
 void msp_file_close(msp_file_t *f);
-msp_bed_t *msp_bed_read(msp_file_t *fp, uint32_t *err);
-msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err);
+msp_bed_t *msp_bed_read(const char *fn);
+int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
 
 // strmap
 msp_strmap_t *msp_strmap_init(void);
