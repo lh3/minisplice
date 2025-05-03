@@ -33,7 +33,6 @@ extern "C" {
 char *msp_strdup(const char *src);
 int64_t msp_sprintf_lite(kstring_t *s, const char *fmt, ...);
 
-msp_bedview_t *msp_bed_select_train(const msp_bed_t *bed);
 void msp_bed_format(kstring_t *out, const msp_bed1_t *b);
 
 double msp_cputime(void);

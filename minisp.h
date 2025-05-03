@@ -36,14 +36,6 @@ typedef struct {
 	msp_strmap_t *h;
 } msp_bed_t;
 
-typedef const msp_bed1_t *msp_bed1_p;
-
-typedef struct {
-	const msp_bed_t *bed;
-	int64_t n, m;
-	msp_bed1_p *a;
-} msp_bedview_t;
-
 extern int msp_verbose;
 
 #ifdef __cplusplus
