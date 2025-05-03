@@ -26,4 +26,16 @@ typedef struct {
 
 extern int msp_verbose;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+msp_file_t *msp_bed_open(const char *fn);
+void msp_file_close(msp_file_t *f);
+msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

@@ -1,6 +1,116 @@
-#include "minisp.h"
+#include <stdarg.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "msppriv.h"
 
 int msp_verbose = 3;
+
+/************************
+ * Lightweight snprintf *
+ ************************/
+
+#ifndef kroundup64
+#define kroundup64(x) (--(x), (x)|=(x)>>1, (x)|=(x)>>2, (x)|=(x)>>4, (x)|=(x)>>8, (x)|=(x)>>16, (x)|=(x)>>32, ++(x))
+#endif
+
+static inline void str_enlarge(kstring_t *s, int l)
+{
+	if (s->l + l + 1 > s->m) {
+		s->m = s->l + l + 1;
+		kroundup64(s->m);
+		s->s = (char*)realloc(s->s, s->m);
+	}
+}
+
+static inline void str_copy(kstring_t *s, const char *st, const char *en)
+{
+	str_enlarge(s, en - st);
+	memcpy(&s->s[s->l], st, en - st);
+	s->l += en - st;
+}
+
+int64_t msp_sprintf_lite(kstring_t *s, const char *fmt, ...)
+{
+	char buf[32]; // for integer to string conversion
+	const char *p, *q;
+	int64_t len = 0;
+	va_list ap;
+	va_start(ap, fmt);
+	for (q = p = fmt; *p; ++p) {
+		if (*p == '%') {
+			if (p > q) {
+				len += p - q;
+				if (s) str_copy(s, q, p);
+			}
+			++p;
+			if (*p == 'd') {
+				int c, i, l = 0;
+				unsigned int x;
+				c = va_arg(ap, int);
+				x = c >= 0? c : -c;
+				do { buf[l++] = x%10 + '0'; x /= 10; } while (x > 0);
+				if (c < 0) buf[l++] = '-';
+				len += l;
+				if (s) {
+					str_enlarge(s, l);
+					for (i = l - 1; i >= 0; --i) s->s[s->l++] = buf[i];
+				}
+			} else if (*p == 'l' && *(p+1) == 'd') {
+				int i, l = 0;
+				long c;
+				unsigned long x;
+				c = va_arg(ap, long);
+				x = c >= 0? c : -c;
+				do { buf[l++] = x%10 + '0'; x /= 10; } while (x > 0);
+				if (c < 0) buf[l++] = '-';
+				len += l;
+				if (s) {
+					str_enlarge(s, l);
+					for (i = l - 1; i >= 0; --i) s->s[s->l++] = buf[i];
+				}
+				++p;
+			} else if (*p == 'u') {
+				int i, l = 0;
+				uint32_t x;
+				x = va_arg(ap, uint32_t);
+				do { buf[l++] = x%10 + '0'; x /= 10; } while (x > 0);
+				len += l;
+				if (s) {
+					str_enlarge(s, l);
+					for (i = l - 1; i >= 0; --i) s->s[s->l++] = buf[i];
+				}
+			} else if (*p == 's') {
+				char *r = va_arg(ap, char*);
+				int l;
+				l = strlen(r);
+				len += l;
+				if (s) str_copy(s, r, r + l);
+			} else if (*p == 'c') {
+				++len;
+				if (s) {
+					str_enlarge(s, 1);
+					s->s[s->l++] = va_arg(ap, int);
+				}
+			} else {
+				fprintf(stderr, "ERROR: unrecognized type '%%%c'\n", *p);
+				abort();
+			}
+			q = p + 1;
+		}
+	}
+	if (p > q) {
+		len += p - q;
+		if (s) str_copy(s, q, p);
+	}
+	va_end(ap);
+	if (s) s->s[s->l] = 0;
+	return len;
+}
+
+/**************************
+ * Timing and peak memory *
+ **************************/
 
 #if defined(WIN32) || defined(_WIN32)
 #include <windows.h>

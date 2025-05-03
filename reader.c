@@ -12,6 +12,36 @@ static void msp_file_init_buf(msp_file_t *fp)
 	fp->buf = buf;
 }
 
+void msp_file_close(msp_file_t *f)
+{
+	kstring_t *s;
+	if (f == 0) return;
+	if (f->type == MSP_FT_BED) {
+		kstream_t *ks = (kstream_t*)f->fp;
+		gzFile fp = ks->f;
+		ks_destroy(ks);
+		gzclose(fp);
+	}
+	s = (kstring_t*)f->buf;
+	if (s) free(s->s);
+	free(f->buf);
+	free(f);
+}
+
+msp_file_t *msp_bed_open(const char *fn)
+{
+	gzFile fp;
+	msp_file_t *f;
+	kstream_t *ks;
+	fp = fn == 0 || strcmp(fn, "-") == 0? gzdopen(0, "rb") : gzopen(fn, "rb");
+	if (fp == 0) return 0;
+	ks = ks_init(fp);
+	f = MSP_CALLOC(msp_file_t, 1);
+	f->fp = ks;
+	f->type = MSP_FT_BED;
+	return f;
+}
+
 msp_bed1_t *msp_bed_read1(msp_file_t *fp, uint32_t *err)
 {
 	int32_t i, ret, ctg_len = 0, name_len = 0, tot_len, tot_cnt;

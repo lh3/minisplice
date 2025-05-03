@@ -7,9 +7,19 @@
 #define MSP_CALLOC(type, cnt)       ((type*)calloc((cnt), sizeof(type)))
 #define MSP_REALLOC(type, ptr, cnt) ((type*)realloc((ptr), (cnt) * sizeof(type)))
 
+#ifndef KSTRING_T // same as kstring_t in kseq.h
+#define KSTRING_T kstring_t
+typedef struct __kstring_t {
+	size_t l, m;
+	char *s;
+} kstring_t;
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+int64_t msp_sprintf_lite(kstring_t *s, const char *fmt, ...);
 
 double msp_cputime(void);
 double msp_realtime(void);
