@@ -32,5 +32,5 @@ depend:
 
 main.o: msppriv.h minisp.h ketopt.h
 misc.o: msppriv.h minisp.h
-reader.o: msppriv.h minisp.h kseq.h
+reader.o: msppriv.h minisp.h kseq.h ksort.h
 strmap.o: msppriv.h minisp.h khashl.h

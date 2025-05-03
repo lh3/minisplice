@@ -1,10 +1,21 @@
 #include <zlib.h>
+#include <stdio.h>
 #include <assert.h>
 #include <stdlib.h>
 #include "msppriv.h"
 
 #include "kseq.h"
 KSEQ_INIT(gzFile, gzread)
+
+#include "ksort.h"
+#define msp196x_key(a) ((a).x)
+KRADIX_SORT_INIT(msp196x, msp196_t, msp196x_key, 64)
+#define msp196y_key(a) ((a).y)
+KRADIX_SORT_INIT(msp196y, msp196_t, msp196y_key, 64)
+
+/****************
+ * General file *
+ ****************/
 
 static void msp_file_init_buf(msp_file_t *fp)
 {
@@ -28,6 +39,10 @@ void msp_file_close(msp_file_t *f)
 	free(f->buf);
 	free(f);
 }
+
+/**************
+ * BED reader *
+ **************/
 
 msp_file_t *msp_bed_open(const char *fn)
 {
@@ -53,6 +68,7 @@ int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 
 	assert(fp != 0 && fp->fp != 0 && fp->type == MSP_FT_BED);
 
+	*b_ = 0;
 	if (fp->buf == 0) msp_file_init_buf(fp);
 	buf = (kstring_t*)fp->buf;
 	ks = (kstream_t*)fp->fp;
@@ -129,9 +145,61 @@ msp_bed_t *msp_bed_read(const char *fn)
 	msp_bed_t *bed;
 	msp_bed1_t *b;
 	msp_file_t *fp;
+	int64_t lineno = 0;
+	int rc;
 
 	fp = msp_bed_open(fn);
 	if (fp == 0) return 0;
 	bed = MSP_CALLOC(msp_bed_t, 1);
+	while ((rc = msp_bed_read1(fp, &b)) != -1) {
+		++lineno;
+		if (b == 0) {
+			if (msp_verbose >= 1)
+				fprintf(stderr, "[E::%s] BED parsing error on line %ld\n", __func__, (long)lineno);
+			continue;
+		}
+		b->cid = msp_strmap_add(bed->h, b->ctg);
+		MSP_GROW(msp_bed1_t*, bed->a, bed->n, bed->m);
+		bed->a[bed->n++] = b;
+	}
+	msp_file_close(fp);
+	if (msp_verbose >= 3)
+		fprintf(stderr, "[M::%s] read %ld BED records\n", __func__, (long)bed->n);
 	return bed;
+}
+
+void msp_bed_destroy(msp_bed_t *bed)
+{
+	int64_t i;
+	for (i = 0; i < bed->n; ++i)
+		free(bed->a[i]);
+	free(bed->a);
+	msp_strmap_destroy(bed->h);
+	free(bed);
+}
+
+void msp_bed_sort(msp_bed_t *bed)
+{
+	int64_t i, i0;
+	msp196_t *a;
+	msp_bed1_t **t;
+	a = MSP_MALLOC(msp196_t, bed->n);
+	t = MSP_MALLOC(msp_bed1_t*, bed->n);
+	for (i = 0; i < bed->n; ++i) {
+		a[i].x = bed->a[i]->cid;
+		a[i].y = bed->a[i]->st;
+		a[i].z = i;
+		t[i] = bed->a[i];
+	}
+	radix_sort_msp196x(a, a + bed->n);
+	for (i0 = 0, i = 1; i <= bed->n; ++i) {
+		if (i == bed->n || a[i0].x != a[i].x) {
+			radix_sort_msp196y(&a[i0], &a[i]);
+			i0 = i;
+		}
+	}
+	for (i = 0; i < bed->n; ++i)
+		bed->a[i] = t[a[i].z];
+	free(t);
+	free(a);
 }

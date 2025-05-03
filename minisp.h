@@ -32,7 +32,7 @@ typedef struct {
 
 typedef struct {
 	int64_t n, m;
-	msp_bed1_t *a;
+	msp_bed1_t **a;
 	msp_strmap_t *h;
 } msp_bed_t;
 
@@ -42,9 +42,11 @@ extern int msp_verbose;
 extern "C" {
 #endif
 
+// BED reader
 msp_file_t *msp_bed_open(const char *fn);
 void msp_file_close(msp_file_t *f);
 msp_bed_t *msp_bed_read(const char *fn);
+void msp_bed_sort(msp_bed_t *bed);
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
 
 // strmap
