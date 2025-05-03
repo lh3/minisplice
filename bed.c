@@ -13,6 +13,7 @@ void msp_bed_destroy(msp_bed_t *bed)
 	for (i = 0; i < bed->n; ++i)
 		free(bed->a[i]);
 	free(bed->a);
+	free(bed->c);
 	msp_strmap_destroy(bed->h);
 	free(bed);
 }
@@ -53,6 +54,20 @@ void msp_bed_sort(msp_bed_t *bed)
 		bed->a[i] = t[a[i].z];
 	free(t);
 	free(a);
+}
+
+void msp_bed_idxctg(msp_bed_t *bed)
+{
+	int64_t i0, i;
+	if (!msp_bed_is_sorted(bed)) msp_bed_sort(bed);
+	bed->c = MSP_CALLOC(msp_bedctg_t, bed->h->n);
+	for (i0 = 0, i = 1; i < bed->n; ++i) {
+		if (i == bed->n || bed->a[i0]->cid != bed->a[i]->cid) {
+			bed->c[bed->a[i0]->cid].n = i - i0;
+			bed->c[bed->a[i0]->cid].off = i0;
+			i0 = i;
+		}
+	}
 }
 
 void msp_bed_format(kstring_t *out, const msp_bed1_t *b)

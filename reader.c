@@ -27,11 +27,44 @@ void msp_file_close(msp_file_t *f)
 		gzFile fp = ks->f;
 		ks_destroy(ks);
 		gzclose(fp);
+	} else if (f->type == MSP_FT_FASTX) {
+		kseq_t *ks = (kseq_t*)f->fp;
+		gzFile fp = ks->f->f;
+		kseq_destroy(ks);
+		gzclose(fp);
 	}
 	s = (kstring_t*)f->buf;
 	if (s) free(s->s);
 	free(f->buf);
 	free(f);
+}
+
+/****************
+ * FASTX reader *
+ ****************/
+
+msp_file_t *msp_fastx_open(const char *fn)
+{
+	gzFile fp;
+	msp_file_t *f;
+	kseq_t *ks;
+	fp = fn == 0 || strcmp(fn, "-") == 0? gzdopen(0, "rb") : gzopen(fn, "rb");
+	if (fp == 0) return 0;
+	ks = kseq_init(fp);
+	f = MSP_CALLOC(msp_file_t, 1);
+	f->fp = ks;
+	f->type = MSP_FT_FASTX;
+	return f;
+}
+
+int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq)
+{
+	kseq_t *ks = (kseq_t*)fp->fp;
+	int ret;
+	*name = 0, *seq = 0;
+	ret = kseq_read(ks);
+	if (ret > 0) *seq = ks->seq.s, *name = ks->name.s;
+	return ret;
 }
 
 /**************

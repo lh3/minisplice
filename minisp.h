@@ -5,6 +5,8 @@
 
 typedef enum { MSP_FT_FASTX, MSP_FT_BED } msp_ft_t;
 
+typedef const char *msp_cstr_t;
+
 typedef struct {
 	msp_ft_t type;
 	void *fp;
@@ -31,8 +33,13 @@ typedef struct {
 } msp_bed1_t;
 
 typedef struct {
+	int64_t n, off;
+} msp_bedctg_t;
+
+typedef struct {
 	int64_t n, m;
 	msp_bed1_t **a;
+	msp_bedctg_t *c;
 	msp_strmap_t *h;
 } msp_bed_t;
 
@@ -42,9 +49,14 @@ extern int msp_verbose;
 extern "C" {
 #endif
 
+void msp_file_close(msp_file_t *f);
+
+// FASTX reader
+msp_file_t *msp_fastx_open(const char *fn);
+int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq);
+
 // BED reader
 msp_file_t *msp_bed_open(const char *fn);
-void msp_file_close(msp_file_t *f);
 msp_bed_t *msp_bed_read(const char *fn);
 void msp_bed_sort(msp_bed_t *bed);
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
