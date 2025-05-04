@@ -111,13 +111,13 @@ static void msp_reg_merge(const msp_bed_t *bed, const msp_bedctg_t *c, msp192a_t
 		if (bed->a[i]->st > en) {
 			if (en > 0) {
 				MSP_GROW(msp192_t, t->a, t->n, t->m);
-				t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+				t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand > 0? 0 : 1;
 			}
 			st = bed->a[i]->st, en = bed->a[i]->en;
 		} else en = en > bed->a[i]->en? en : bed->a[i]->en;
 	}
 	MSP_GROW(msp192_t, t->a, t->n, t->m);
-	t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+	t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand > 0? 0 : 1;
 }
 
 static void msp_reg_sub(msp192a_t *t, const msp192a_t *a, const msp192a_t *b)
@@ -158,7 +158,11 @@ msp192_t *msp_bed_gen_negreg(const msp_bed_t *bed, int32_t cid, int64_t *nn)
 	msp_reg_sub(&t, &a[0], &a[1]);
 	msp_reg_sub(&t, &a[1], &a[0]);
 	radix_sort_msp192x(t.a, t.a + t.n);
-	for (i = 0; i < t.n; ++i) t.a[i].z *= -1; // flip the strand
+	for (i = 0; i < t.n; ++i) t.a[i].z ^= 1; // flip the strand
 	*nn = t.n;
 	return t.a;
+}
+
+void msp_gen_train(const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
+{
 }

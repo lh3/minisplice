@@ -71,9 +71,8 @@ int main_bed2bed(int argc, char *argv[])
 			msp192_t *a;
 			a = msp_bed_gen_negreg(bed, cid, &n);
 			for (i = 0; i < n; ++i) {
-				int64_t strand = (int64_t)a[i].z;
 				out.l = 0;
-				msp_sprintf_lite(&out, "%s\t%ld\t%ld\t.\t.\t%c\n", bed->h->a[cid], (long)a[i].x, (long)a[i].y, strand > 0? '+' : strand < 0? '-' : '.');
+				msp_sprintf_lite(&out, "%s\t%ld\t%ld\t.\t.\t%c\n", bed->h->a[cid], (long)a[i].x, (long)a[i].y, "+-"[a[i].z]);
 				fwrite(out.s, 1, out.l, stdout);
 			}
 			free(a);
