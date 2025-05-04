@@ -269,9 +269,29 @@ static void msp_gen_neg(msp64a_t *td, msp64a_t *ta, int64_t len, const uint8_t *
 	}
 }
 
-static char *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
+static uint8_t *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
 {
-	return 0;
+	int64_t i, y = x>>3;
+	int32_t l, r, k;
+	uint8_t *s;
+	if (!(x>>2&1)) { // forward
+		if (!(x>>1&1)) l = ext, r = ext + 2; // donor
+		else l = ext + 2, r = ext;
+	} else { // reverse
+		if (!(x>>1&1)) l = ext + 2, r = ext;
+		else l = ext, r = ext + 2;
+	}
+	if (y - l < 0 || y + r > len) return 0; // out of range
+	for (i = y - l; i < y + r; ++i)
+		if (seq[i] > 3) return 0; // ambiguous base
+	s = MSP_CALLOC(uint8_t, l + r);
+	if (!(x>>2&1)) {
+		memcpy(s, &seq[y - l], l + r);
+	} else {
+		for (i = y + r - 1, k = 0; i >= y - l; --i)
+			s[k++] = 3 - seq[i];
+	}
+	return s;
 }
 
 static void msp_write_tdata(msp_tdata_t *d, msp64a_t *p, msp64a_t *n, int32_t cid, int w, int32_t ext, int64_t len, const uint8_t *seq)
@@ -285,10 +305,13 @@ static void msp_write_tdata(msp_tdata_t *d, msp64a_t *p, msp64a_t *n, int32_t ci
 	free(p->a); free(n->a);
 	radix_sort_msp64(a, a + t);
 	for (i = 0; i < t; ++i) {
+		uint8_t *s;
+		s = msp_get_seq(len, seq, a[i], ext);
+		if (s == 0) continue;
 		MSP_GROW(msp_tdata1_t, d->a[w], d->n[w], d->m[w]);
 		d->a[w][d->n[w]].cid = cid;
 		d->a[w][d->n[w]].x = a[i];
-		d->a[w][d->n[w]++].seq = msp_get_seq(len, seq, a[i], ext);
+		d->a[w][d->n[w]++].seq = s;
 	}
 }
 
@@ -317,6 +340,7 @@ msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, do
 	const char *name, *seq;
 	msp_tdata_t *d;
 	d = MSP_CALLOC(msp_tdata_t, 1);
+	d->len = ext * 2 + 2;
 	while ((len = msp_fastx_read(fx, &name, &seq)) >= 0) {
 		int32_t cid;
 		cid = msp_strmap_get(bed->h, name);
@@ -324,4 +348,26 @@ msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, do
 		msp_gen_train_seq(d, bed, cid, len, (uint8_t*)seq, ext, frac_pos);
 	}
 	return d;
+}
+
+void msp_dump_tdata(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
+{
+	kstring_t out = {0,0,0};
+	char *s;
+	int32_t k;
+	int64_t i, j;
+	s = MSP_CALLOC(char, d->len + 1);
+	fprintf(fp, "LN\t%ld\n", (long)d->len);
+	for (k = 0; k < 2; ++k) {
+		for (i = 0; i < d->n[k]; ++i) {
+			uint64_t x = d->a[k][i].x;
+			int32_t cid = d->a[k][i].cid;
+			for (j = 0; j < d->len; ++j)
+				s[j] = "ACGTN"[d->a[k][i].seq[j]];
+			out.l = 0;
+			msp_sprintf_lite(&out, "%c%c\t%s\t%ld\t%c\t%s\n", "DA"[x>>1&1], "PN"[x&1], bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], s);
+			fwrite(out.s, 1, out.l, fp);
+		}
+	}
+	free(out.s);
 }

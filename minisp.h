@@ -1,6 +1,7 @@
 #ifndef MINISP_H
 #define MINISP_H
 
+#include <stdio.h>
 #include <stdint.h>
 
 typedef enum { MSP_FT_FASTX, MSP_FT_BED } msp_ft_t;
@@ -46,10 +47,11 @@ typedef struct {
 typedef struct {
 	int32_t cid;
 	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg
-	char *seq;
+	uint8_t *seq;
 } msp_tdata1_t;
 
 typedef struct {
+	int64_t len;
 	int64_t n[2], m[2];
 	msp_tdata1_t *a[2];
 } msp_tdata_t;
@@ -63,6 +65,7 @@ extern "C" {
 void msp_file_close(msp_file_t *f);
 
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
+void msp_dump_tdata(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
 
 // FASTX reader
 msp_file_t *msp_fastx_open(const char *fn);
