@@ -25,6 +25,11 @@ typedef struct __kstring_t {
 #endif
 
 typedef struct { uint64_t x, y, z; } msp192_t;
+typedef struct { uint64_t x, y; } msp128_t;
+
+typedef struct { int64_t n, m; msp192_t *a; } msp192a_t;
+typedef struct { int64_t n, m; msp128_t *a; } msp128a_t;
+typedef struct { int64_t n, m; uint64_t *a; } msp64a_t;
 
 #ifdef __cplusplus
 extern "C" {

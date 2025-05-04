@@ -7,11 +7,13 @@
 #define MSP_VERSION "0.0-dirty"
 
 int main_bed2bed(int argc, char *argv[]);
+int main_gentrain(int argc, char *argv[]);
 
 static int usage(FILE *fp)
 {
 	fprintf(fp, "Usage: minisplice <command> <arguments>\n");
 	fprintf(fp, "Commands:\n");
+	fprintf(fp, "  gentrain     generate training data\n");
 	fprintf(fp, "  bed2bed      convert BED12 to BED6\n");
 	fprintf(fp, "  version      print the version number\n");
 	return fp == stdout? 0 : 1;
@@ -23,6 +25,7 @@ int main(int argc, char *argv[])
 	msp_realtime();
 	if (argc == 1) return usage(stdout);
 	else if (strcmp(argv[1], "bed2bed") == 0) ret = main_bed2bed(argc-1, argv+1);
+	else if (strcmp(argv[1], "gentrain") == 0) ret = main_gentrain(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
 		return 0;
@@ -39,6 +42,38 @@ int main(int argc, char *argv[])
 			fprintf(stderr, " %s", argv[i]);
 		fprintf(stderr, "\n[M::%s] Real time: %.3f sec; CPU: %.3f sec; Peak RSS: %.3f GB\n", __func__, msp_realtime(), msp_cputime(), msp_peakrss() / 1024.0 / 1024.0 / 1024.0);
 	}
+	return 0;
+}
+
+int main_gentrain(int argc, char *argv[])
+{
+	ketopt_t o = KETOPT_INIT;
+	msp_bed_t *bed;
+	msp_file_t *fx;
+	int32_t c, ext = 100;
+	double frac_pos = 0.25;
+
+	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
+	}
+	if (argc - o.ind < 2) {
+		fprintf(stderr, "Usage: minisplice gentrain [options] <in.bed> <in.fastx>\n");
+		return 1;
+	}
+	bed = msp_bed_read(argv[o.ind]);
+	if (bed == 0 && msp_verbose >= 1) {
+		fprintf(stderr, "ERROR: fail to open BED file '%s'\n", argv[o.ind]);
+		return 1;
+	}
+	msp_bed_idxctg(bed);
+	fx = msp_fastx_open(argv[o.ind+1]);
+	if (bed == 0 && msp_verbose >= 1) {
+		msp_bed_destroy(bed);
+		fprintf(stderr, "ERROR: fail to open FASTX file '%s'\n", argv[o.ind+1]);
+		return 1;
+	}
+	msp_gen_train(bed, fx, ext, frac_pos);
+	msp_file_close(fx);
+	msp_bed_destroy(bed);
 	return 0;
 }
 

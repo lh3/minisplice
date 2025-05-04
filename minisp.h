@@ -43,6 +43,11 @@ typedef struct {
 	msp_strmap_t *h;
 } msp_bed_t;
 
+typedef struct {
+	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg
+	uint8_t *seq;
+} msp_tdata_t;
+
 extern int msp_verbose;
 
 #ifdef __cplusplus
@@ -50,6 +55,8 @@ extern "C" {
 #endif
 
 void msp_file_close(msp_file_t *f);
+
+msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
 
 // FASTX reader
 msp_file_t *msp_fastx_open(const char *fn);

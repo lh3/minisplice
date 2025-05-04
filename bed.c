@@ -2,10 +2,12 @@
 #include "msppriv.h"
 
 #include "ksort.h"
-#define msp192x_key(a) ((a).x)
-KRADIX_SORT_INIT(msp192x, msp192_t, msp192x_key, 64)
-#define msp192y_key(a) ((a).y)
-KRADIX_SORT_INIT(msp192y, msp192_t, msp192y_key, 64)
+#define key_x(a) ((a).x)
+KRADIX_SORT_INIT(msp192x, msp192_t, key_x, 64)
+#define key_y(a) ((a).y)
+KRADIX_SORT_INIT(msp192y, msp192_t, key_y, 64)
+#define key_self(a) (a)
+KRADIX_SORT_INIT(msp64, uint64_t, key_self, 64)
 
 void msp_bed_destroy(msp_bed_t *bed)
 {
@@ -96,11 +98,6 @@ void msp_bed_format(kstring_t *out, const msp_bed1_t *b)
  * Generate negative regions *
  *****************************/
 
-typedef struct {
-	int64_t n, m;
-	msp192_t *a;
-} msp192a_t;
-
 static void msp_reg_merge(const msp_bed_t *bed, const msp_bedctg_t *c, msp192a_t *t, int32_t strand)
 {
 	int64_t st, en, i;
@@ -163,6 +160,77 @@ msp192_t *msp_bed_gen_negreg(const msp_bed_t *bed, int32_t cid, int64_t *nn)
 	return t.a;
 }
 
-void msp_gen_train(const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
+/*******************************
+ * Generate training sequences *
+ *******************************/
+
+static void msp_uint64_dedup(msp64a_t *t)
 {
+	int64_t i0, i, k;
+	radix_sort_msp64(t->a, t->a + t->n);
+	for (i0 = 0, i = 1, k = 0; i <= t->n; ++i) {
+		if (i == t->n || t->a[i0] != t->a[i]) {
+			t->a[k++] = t->a[i0];
+			i0 = i;
+		}
+	}
+	t->n = k;
+}
+
+static void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
+{
+	const msp_bedctg_t *c = &bed->c[cid];
+	int64_t i, j;
+	for (i = c->off; i < c->off + c->n; ++i) {
+		const msp_bed1_t *b = bed->a[i];
+		if (b->n_blk < 2 || b->strand == 0) continue;
+		for (j = 1; j < b->n_blk; ++j) {
+			int64_t p = b->blk[j-1].en, q = b->blk[j].st;
+			assert(0 < p && p < q && q < len);
+			if (b->strand > 0) {
+				if (seq[p] == 2 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 2) { // GT-AG on the forward strand
+					MSP_GROW(uint64_t, td->a, td->n, td->m);
+					td->a[td->n] = p<<3 | 0<<2 | 0<<1;
+					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
+					ta->a[ta->n] = q<<3 | 0<<2 | 1<<1;
+				}
+			} else if (b->strand < 0) {
+				if (seq[p] == 1 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 1) { // CT-AC on the reverse strand
+					MSP_GROW(uint64_t, td->a, td->n, td->m);
+					td->a[td->n] = q<<3 | 1<<2 | 0<<1;
+					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
+					ta->a[ta->n] = p<<3 | 1<<2 | 1<<1;
+				}
+			}
+		}
+	}
+	msp_uint64_dedup(td);
+	msp_uint64_dedup(ta);
+}
+
+msp_tdata_t *msp_gen_train_seq(const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq, int32_t ext, double frac_pos, int64_t *nn)
+{
+	int64_t n_negreg;
+	msp192_t *negreg;
+	msp64a_t td = {0,0,0}, ta = {0,0,0};
+
+	if (cid >= bed->h->n) return 0;
+	negreg = msp_bed_gen_negreg(bed, cid, &n_negreg);
+	msp_gen_pos(&td, &ta, bed, cid, len, seq);
+	free(negreg);
+	return 0;
+}
+
+msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos)
+{
+	int32_t len;
+	const char *name, *seq;
+	while ((len = msp_fastx_read(fx, &name, &seq)) >= 0) {
+		int32_t cid;
+		int64_t n;
+		cid = msp_strmap_get(bed->h, name);
+		if (cid < 0) continue; // skip if not found in the BED file
+		msp_gen_train_seq(bed, cid, len, (uint8_t*)seq, ext, frac_pos, &n);
+	}
+	return 0;
 }
