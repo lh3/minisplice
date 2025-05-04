@@ -1,14 +1,14 @@
 CC=			gcc
-CFLAGS=		-g -Wall -Wc++-compat -O3
+CFLAGS=		-g -std=c99 -Wall -Wc++-compat -O3
 CPPFLAGS=
 INCLUDES=
-OBJS=		reader.o misc.o strmap.o bed.o
+OBJS=		kautodiff.o kann.o reader.o misc.o strmap.o bed.o train.o
 PROG=		minisplice
-LIBS=		-lz -lm
+LIBS=		-lpthread -lz -lm
 
 ifneq ($(asan),)
 	CFLAGS+=-fsanitize=address
-	LIBS+=-fsanitize=address -pthread -ldl
+	LIBS+=-fsanitize=address -ldl
 endif
 
 .SUFFIXES:.c .o

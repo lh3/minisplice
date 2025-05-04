@@ -88,25 +88,6 @@ int main_gentrain(int argc, char *argv[])
 	return 0;
 }
 
-int main_train0(int argc, char *argv[])
-{
-	ketopt_t o = KETOPT_INIT;
-	int32_t c;
-	msp_tdata_t *d;
-
-	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
-	}
-	if (argc - o.ind < 1) {
-		fprintf(stderr, "Usage: minisplice train0 [options] <in.data> <in.fastx>\n");
-		fprintf(stderr, "Options:\n");
-		return 1;
-	}
-	d = msp_tdata_read(argv[o.ind]);
-	msp_tdata_dump(stdout, 0, d);
-	msp_tdata_destroy(d);
-	return 0;
-}
-
 int main_bed2bed(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
