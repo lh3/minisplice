@@ -11,6 +11,20 @@ KSEQ_INIT(gzFile, gzread)
  * General file *
  ****************/
 
+msp_file_t *msp_file_open_by_line(const char *fn)
+{
+	gzFile fp;
+	msp_file_t *f;
+	kstream_t *ks;
+	fp = fn == 0 || strcmp(fn, "-") == 0? gzdopen(0, "rb") : gzopen(fn, "rb");
+	if (fp == 0) return 0;
+	ks = ks_init(fp);
+	f = MSP_CALLOC(msp_file_t, 1);
+	f->fp = ks;
+	f->type = MSP_FT_LINE;
+	return f;
+}
+
 static void msp_file_init_buf(msp_file_t *fp)
 {
 	kstring_t *buf;
@@ -22,7 +36,7 @@ void msp_file_close(msp_file_t *f)
 {
 	kstring_t *s;
 	if (f == 0) return;
-	if (f->type == MSP_FT_BED) {
+	if (f->type == MSP_FT_LINE) {
 		kstream_t *ks = (kstream_t*)f->fp;
 		gzFile fp = ks->f;
 		ks_destroy(ks);
@@ -95,20 +109,6 @@ int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq)
  * BED reader *
  **************/
 
-msp_file_t *msp_bed_open(const char *fn)
-{
-	gzFile fp;
-	msp_file_t *f;
-	kstream_t *ks;
-	fp = fn == 0 || strcmp(fn, "-") == 0? gzdopen(0, "rb") : gzopen(fn, "rb");
-	if (fp == 0) return 0;
-	ks = ks_init(fp);
-	f = MSP_CALLOC(msp_file_t, 1);
-	f->fp = ks;
-	f->type = MSP_FT_BED;
-	return f;
-}
-
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 {
 	int32_t i, ret, ctg_len = 0, name_len = 0, tot_len, tot_cnt;
@@ -117,7 +117,7 @@ int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 	msp_bed1_t t, *b = 0;
 	char *p, *q, *bl = 0, *bs = 0; 
 
-	assert(fp != 0 && fp->fp != 0 && fp->type == MSP_FT_BED);
+	assert(fp != 0 && fp->fp != 0 && fp->type == MSP_FT_LINE);
 
 	*b_ = 0;
 	if (fp->buf == 0) msp_file_init_buf(fp);
@@ -199,7 +199,7 @@ msp_bed_t *msp_bed_read(const char *fn)
 	int64_t lineno = 0;
 	int rc;
 
-	fp = msp_bed_open(fn);
+	fp = msp_file_open_by_line(fn);
 	if (fp == 0) return 0;
 	bed = MSP_CALLOC(msp_bed_t, 1);
 	bed->h = msp_strmap_init();
@@ -218,4 +218,65 @@ msp_bed_t *msp_bed_read(const char *fn)
 	if (msp_verbose >= 3)
 		fprintf(stderr, "[M::%s] read %ld BED records\n", __func__, (long)bed->n);
 	return bed;
+}
+
+/****************
+ * tdata reader *
+ ****************/
+
+msp_tdata_t *msp_tdata_read(const char *fn)
+{
+	msp_file_t *fp;
+	msp_tdata_t *d;
+	kstring_t str = {0,0,0};
+	kstream_t *ks;
+	int32_t ret;
+
+	fp = msp_file_open_by_line(fn);
+	if (fp == 0) return 0;
+	ks = (kstream_t*)fp->fp;
+	d = MSP_CALLOC(msp_tdata_t, 1);
+	while ((ret = ks_getuntil(ks, KS_SEP_LINE, &str, 0)) >= 0) {
+		char *p, *q, *seq = 0;
+		int32_t i;
+		uint64_t x = (uint64_t)-1;
+		for (p = q = str.s, i = 0;; ++p) {
+			if (*p == 0 || *p == '\t') {
+				int c = *p;
+				*p = 0;
+				if (i == 0) {
+					if (strncmp(str.s, "DP", 2) == 0) x = 0<<1|0;
+					else if (strncmp(str.s, "DN", 2) == 0) x = 0<<1|1;
+					else if (strncmp(str.s, "AP", 2) == 0) x = 1<<1|0;
+					else if (strncmp(str.s, "AN", 2) == 0) x = 1<<1|1;
+				} else if (i == 1) {
+					if (strncmp(str.s, "LN", 2) == 0) {
+						d->len = atoi(q);
+						break;
+					}
+					if (x == (uint64_t)-1) break;
+				} else if (i == 2) {
+					x |= (uint64_t)atol(q) << 3;
+				} else if (i == 3) {
+					x |= *q == '+'? 0<<2 : 1<<2;
+				} else if (i == 4) {
+					seq = q;
+				}
+				++i, q = p + 1;
+				if (c == 0 || i >= 5) break;
+			}
+		}
+		if (x != (uint64_t)-1 && seq) {
+			int32_t j, w = x>>1&1;
+			msp_tdata1_t *p;
+			MSP_GROW(msp_tdata1_t, d->a[w], d->n[w], d->m[w]);
+			p = &d->a[w][d->n[w]++];
+			p->cid = -1;
+			p->x = x;
+			p->seq = MSP_CALLOC(uint8_t, d->len);
+			for (j = 0; j < d->len; ++j)
+				p->seq[j] = msp_nt6_table[(uint8_t)seq[j]] - 1;
+		}
+	}
+	return d;
 }

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-typedef enum { MSP_FT_FASTX, MSP_FT_BED } msp_ft_t;
+typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 
 typedef const char *msp_cstr_t;
 
@@ -65,6 +65,7 @@ extern "C" {
 void msp_file_close(msp_file_t *f);
 
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
+msp_tdata_t *msp_tdata_read(const char *fn);
 void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
 void msp_tdata_destroy(msp_tdata_t *d);
 

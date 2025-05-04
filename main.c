@@ -8,12 +8,14 @@
 
 int main_bed2bed(int argc, char *argv[]);
 int main_gentrain(int argc, char *argv[]);
+int main_train0(int argc, char *argv[]);
 
 static int usage(FILE *fp)
 {
 	fprintf(fp, "Usage: minisplice <command> <arguments>\n");
 	fprintf(fp, "Commands:\n");
 	fprintf(fp, "  gentrain     generate training data\n");
+	fprintf(fp, "  train0       core model training\n");
 	fprintf(fp, "  bed2bed      convert BED12 to BED6\n");
 	fprintf(fp, "  version      print the version number\n");
 	return fp == stdout? 0 : 1;
@@ -26,6 +28,7 @@ int main(int argc, char *argv[])
 	if (argc == 1) return usage(stdout);
 	else if (strcmp(argv[1], "bed2bed") == 0) ret = main_bed2bed(argc-1, argv+1);
 	else if (strcmp(argv[1], "gentrain") == 0) ret = main_gentrain(argc-1, argv+1);
+	else if (strcmp(argv[1], "train0") == 0) ret = main_train0(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
 		return 0;
@@ -82,6 +85,25 @@ int main_gentrain(int argc, char *argv[])
 	msp_tdata_dump(stdout, bed, d);
 	msp_tdata_destroy(d);
 	msp_bed_destroy(bed);
+	return 0;
+}
+
+int main_train0(int argc, char *argv[])
+{
+	ketopt_t o = KETOPT_INIT;
+	int32_t c;
+	msp_tdata_t *d;
+
+	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
+	}
+	if (argc - o.ind < 1) {
+		fprintf(stderr, "Usage: minisplice train0 [options] <in.data> <in.fastx>\n");
+		fprintf(stderr, "Options:\n");
+		return 1;
+	}
+	d = msp_tdata_read(argv[o.ind]);
+	msp_tdata_dump(stdout, 0, d);
+	msp_tdata_destroy(d);
 	return 0;
 }
 
