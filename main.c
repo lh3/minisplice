@@ -79,7 +79,8 @@ int main_gentrain(int argc, char *argv[])
 	}
 	d = msp_gen_train(bed, fx, ext, frac_pos);
 	msp_file_close(fx);
-	msp_dump_tdata(stdout, bed, d);
+	msp_tdata_dump(stdout, bed, d);
+	msp_tdata_destroy(d);
 	msp_bed_destroy(bed);
 	return 0;
 }

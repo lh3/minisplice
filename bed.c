@@ -157,6 +157,7 @@ msp192_t *msp_bed_gen_negreg(const msp_bed_t *bed, int32_t cid, int64_t *nn)
 	radix_sort_msp192x(t.a, t.a + t.n);
 	for (i = 0; i < t.n; ++i) t.a[i].z ^= 1; // flip the strand
 	*nn = t.n;
+	free(a[0].a); free(a[1].a);
 	return t.a;
 }
 
@@ -313,6 +314,7 @@ static void msp_write_tdata(msp_tdata_t *d, msp64a_t *p, msp64a_t *n, int32_t ci
 		d->a[w][d->n[w]].x = a[i];
 		d->a[w][d->n[w]++].seq = s;
 	}
+	free(a);
 }
 
 void msp_gen_train_seq(msp_tdata_t *d, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq, int32_t ext, double frac_pos)
@@ -350,7 +352,7 @@ msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, do
 	return d;
 }
 
-void msp_dump_tdata(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
+void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
 {
 	kstring_t out = {0,0,0};
 	char *s;
@@ -370,4 +372,17 @@ void msp_dump_tdata(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
 		}
 	}
 	free(out.s);
+	free(s);
+}
+
+void msp_tdata_destroy(msp_tdata_t *d)
+{
+	int32_t k;
+	int64_t i;
+	for (k = 0; k < 2; ++k) {
+		for (i = 0; i < d->n[k]; ++i)
+			free(d->a[k][i].seq);
+		free(d->a[k]);
+	}
+	free(d);
 }

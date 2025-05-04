@@ -65,7 +65,8 @@ extern "C" {
 void msp_file_close(msp_file_t *f);
 
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
-void msp_dump_tdata(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
+void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
+void msp_tdata_destroy(msp_tdata_t *d);
 
 // FASTX reader
 msp_file_t *msp_fastx_open(const char *fn);
