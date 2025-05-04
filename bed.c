@@ -212,16 +212,78 @@ static void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_
 			__func__, (long)td->n, (long)ta->n, bed->h->a[cid], (long)n_noncan);
 }
 
+static inline double msp_splitmix64(uint64_t *x)
+{
+	union { uint64_t i; double d; } u;
+	uint64_t z = ((*x) += 0x9e3779b97f4a7c15ULL);
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9ULL;
+	z = (z ^ (z >> 27)) * 0x94d049bb133111ebULL;
+	z = z ^ (z >> 31);
+	u.i = 0x3FFULL << 52 | z >> 12;
+	return u.d - 1.0;
+}
+
+static void msp_neg_sample(msp64a_t *t, int64_t n, uint64_t *x) // reservior sampling
+{
+	int64_t i, k, y;
+	if (t->n < n) return; // no need to downsample
+	for (i = k = 0; i < t->n; ++i) {
+		y = k++ < n? k - 1 : (int64_t)(msp_splitmix64(x) * k);
+		if (y < n) t->a[y] = t->a[i];
+	}
+	t->n = n;
+}
+
+static void msp_gen_neg(msp64a_t *td, msp64a_t *ta, int64_t len, const uint8_t *seq, int64_t n_negreg, const msp192_t *negreg)
+{
+	int64_t j;
+	for (j = 0; j < n_negreg; ++j) {
+		int64_t i, st = negreg[j].x, en = negreg[j].y, rev = negreg[j].z;
+		int32_t l;
+		uint8_t x = 0;
+		for (i = st, l = 0; i < en; ++i) { // this is similar to the k-mer counting loop
+			int c = seq[i];
+			if (c < 4) {
+				x = (x<<2 | c) & 0xf;
+				if (++l >= 2) {
+					if (!rev) {
+						if (x == (2<<2|3)) { // GT on forward
+							MSP_GROW(uint64_t, td->a, td->n, td->m);
+							td->a[td->n++] = (i-1)<<3 | 0<<2 | 0<<1 | 1;
+						} else if (x == (0<<2|2)) { // AG on forward
+							MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
+							ta->a[ta->n++] = (i+1)<<3 | 0<<2 | 1<<1 | 1;
+						}
+					} else {
+						if (x == (0<<2|1)) { // AC on reverse
+							MSP_GROW(uint64_t, td->a, td->n, td->m);
+							td->a[td->n++] = (i+1)<<3 | 1<<2 | 0<<1 | 1;
+						} else if (x == (1<<2|3)) { // CT on reverse
+							MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
+							ta->a[ta->n++] = (i-1)<<3 | 1<<2 | 1<<1 | 1;
+						}
+					}
+				}
+			} else l = 0, x = 0;
+		}
+	}
+}
+
 msp_tdata_t *msp_gen_train_seq(const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq, int32_t ext, double frac_pos, int64_t *nn)
 {
+	uint64_t x = 11;
 	int64_t n_negreg;
 	msp192_t *negreg;
-	msp64a_t td = {0,0,0}, ta = {0,0,0};
+	msp64a_t pd = {0,0,0}, pa = {0,0,0};
+	msp64a_t nd = {0,0,0}, na = {0,0,0};
 
-	if (cid >= bed->h->n) return 0;
+	if (cid >= bed->h->n || frac_pos <= 0.0 || frac_pos >= 1.0) return 0;
 	negreg = msp_bed_gen_negreg(bed, cid, &n_negreg);
-	msp_gen_pos(&td, &ta, bed, cid, len, seq);
+	msp_gen_pos(&pd, &pa, bed, cid, len, seq);
+	msp_gen_neg(&nd, &na, len, seq, n_negreg, negreg);
 	free(negreg);
+	msp_neg_sample(&nd, (int64_t)(pd.n / frac_pos * (1.0 - frac_pos) + .499), &x);
+	msp_neg_sample(&na, (int64_t)(pa.n / frac_pos * (1.0 - frac_pos) + .499), &x);
 	return 0;
 }
 
