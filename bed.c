@@ -61,7 +61,7 @@ void msp_bed_idxctg(msp_bed_t *bed)
 	int64_t i0, i;
 	if (!msp_bed_is_sorted(bed)) msp_bed_sort(bed);
 	bed->c = MSP_CALLOC(msp_bedctg_t, bed->h->n);
-	for (i0 = 0, i = 1; i < bed->n; ++i) {
+	for (i0 = 0, i = 1; i <= bed->n; ++i) {
 		if (i == bed->n || bed->a[i0]->cid != bed->a[i]->cid) {
 			bed->c[bed->a[i0]->cid].n = i - i0;
 			bed->c[bed->a[i0]->cid].off = i0;
@@ -92,6 +92,10 @@ void msp_bed_format(kstring_t *out, const msp_bed1_t *b)
 	}
 }
 
+/*****************************
+ * Generate negative regions *
+ *****************************/
+
 typedef struct {
 	int64_t n, m;
 	msp192_t *a;
@@ -102,12 +106,13 @@ static void msp_reg_merge(const msp_bed_t *bed, const msp_bedctg_t *c, msp192a_t
 	int64_t st, en, i;
 	t->n = t->m = 0, t->a = 0;
 	if (c->n == 0) return;
-	st = bed->a[c->off]->st, en = bed->a[c->off]->en;
-	for (i = c->off + 1; i < c->off + c->n; ++i) {
+	for (i = c->off, st = en = -1; i < c->off + c->n; ++i) {
 		if (bed->a[i]->n_blk < 2 || bed->a[i]->strand * strand <= 0) continue;
 		if (bed->a[i]->st > en) {
-			MSP_GROW(msp192_t, t->a, t->n, t->m);
-			t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+			if (en > 0) {
+				MSP_GROW(msp192_t, t->a, t->n, t->m);
+				t->a[t->n].x = st, t->a[t->n].y = en, t->a[t->n++].z = strand;
+			}
 			st = bed->a[i]->st, en = bed->a[i]->en;
 		} else en = en > bed->a[i]->en? en : bed->a[i]->en;
 	}
@@ -121,9 +126,10 @@ static void msp_reg_sub(msp192a_t *t, const msp192a_t *a, const msp192a_t *b)
 	if (a->n < 1) return;
 	for (i = j = 0; i < a->n; ++i) {
 		int64_t k, st1 = a->a[i].x, en1 = a->a[i].y, x;
-		while (j < b->n && b->a[j].y <= st1) {} // skip b-regions w/o overlaps
+		while (j < b->n && b->a[j].y <= st1) ++j; // skip b-regions w/o overlaps
 		for (k = j, x = st1; k < b->n; ++k) { // adapted from "bedtk sub"
 			int64_t st0 = b->a[k].x, en0 = b->a[k].y;
+			if (st0 >= en1) break;
 			if (st0 < st1) st0 = st1;
 			if (en0 > en1) en0 = en1;
 			if (st0 > x) {

@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
 	int ret = 0;
 	msp_realtime();
 	if (argc == 1) return usage(stdout);
-	else if (strcmp(argv[1], "bed2bed") == 0) main_bed2bed(argc-1, argv+1);
+	else if (strcmp(argv[1], "bed2bed") == 0) ret = main_bed2bed(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
 		return 0;
@@ -48,23 +48,43 @@ int main_bed2bed(int argc, char *argv[])
 	kstring_t out = { 0, 0, 0 };
 	msp_bed_t *bed;
 	int64_t i;
-	int c, to_sort = 0;
+	int c, to_sort = 0, out_neg = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "s", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "sn", 0)) >= 0) {
 		if (c == 's') to_sort = 1;
+		else if (c == 'n') out_neg = 1;
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice bed2bed [options] <in.bed>\n");
 		fprintf(stderr, "Options:\n");
+		fprintf(stderr, "  -n     generate negative regions\n");
 		fprintf(stderr, "  -s     sort\n");
 		return 1;
 	}
 	bed = msp_bed_read(argv[o.ind]);
 	if (to_sort) msp_bed_sort(bed);
-	for (i = 0; i < bed->n; ++i) {
-		msp_bed_format(&out, bed->a[i]);
-		puts(out.s);
+	if (out_neg) {
+		int32_t cid;
+		msp_bed_idxctg(bed);
+		for (cid = 0; cid < bed->h->n; ++cid) {
+			int64_t n;
+			msp192_t *a;
+			a = msp_bed_gen_negreg(bed, cid, &n);
+			for (i = 0; i < n; ++i) {
+				int64_t strand = (int64_t)a[i].z;
+				out.l = 0;
+				msp_sprintf_lite(&out, "%s\t%ld\t%ld\t.\t.\t%c\n", bed->h->a[cid], (long)a[i].x, (long)a[i].y, strand > 0? '+' : strand < 0? '-' : '.');
+				fwrite(out.s, 1, out.l, stdout);
+			}
+			free(a);
+		}
+	} else {
+		for (i = 0; i < bed->n; ++i) {
+			msp_bed_format(&out, bed->a[i]);
+			puts(out.s);
+		}
 	}
 	msp_bed_destroy(bed);
+	free(out.s);
 	return 0;
 }

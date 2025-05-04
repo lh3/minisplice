@@ -59,6 +59,7 @@ int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq);
 msp_file_t *msp_bed_open(const char *fn);
 msp_bed_t *msp_bed_read(const char *fn);
 void msp_bed_sort(msp_bed_t *bed);
+void msp_bed_idxctg(msp_bed_t *bed);
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
 void msp_bed_destroy(msp_bed_t *bed);
 
