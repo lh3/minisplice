@@ -269,7 +269,30 @@ static void msp_gen_neg(msp64a_t *td, msp64a_t *ta, int64_t len, const uint8_t *
 	}
 }
 
-msp_tdata_t *msp_gen_train_seq(const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq, int32_t ext, double frac_pos, int64_t *nn)
+static char *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
+{
+	return 0;
+}
+
+static void msp_write_tdata(msp_tdata_t *d, msp64a_t *p, msp64a_t *n, int32_t cid, int w, int32_t ext, int64_t len, const uint8_t *seq)
+{
+	int64_t i, k = 0, t;
+	uint64_t *a;
+	t = p->n + n->n;
+	a = MSP_CALLOC(uint64_t, t);
+	for (i = 0; i < p->n; ++i) a[k++] = p->a[i];
+	for (i = 0; i < n->n; ++i) a[k++] = n->a[i];
+	free(p->a); free(n->a);
+	radix_sort_msp64(a, a + t);
+	for (i = 0; i < t; ++i) {
+		MSP_GROW(msp_tdata1_t, d->a[w], d->n[w], d->m[w]);
+		d->a[w][d->n[w]].cid = cid;
+		d->a[w][d->n[w]].x = a[i];
+		d->a[w][d->n[w]++].seq = msp_get_seq(len, seq, a[i], ext);
+	}
+}
+
+void msp_gen_train_seq(msp_tdata_t *d, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq, int32_t ext, double frac_pos)
 {
 	uint64_t x = 11;
 	int64_t n_negreg;
@@ -277,26 +300,28 @@ msp_tdata_t *msp_gen_train_seq(const msp_bed_t *bed, int32_t cid, int64_t len, c
 	msp64a_t pd = {0,0,0}, pa = {0,0,0};
 	msp64a_t nd = {0,0,0}, na = {0,0,0};
 
-	if (cid >= bed->h->n || frac_pos <= 0.0 || frac_pos >= 1.0) return 0;
+	if (cid >= bed->h->n || frac_pos <= 0.0 || frac_pos >= 1.0) return;
 	negreg = msp_bed_gen_negreg(bed, cid, &n_negreg);
 	msp_gen_pos(&pd, &pa, bed, cid, len, seq);
 	msp_gen_neg(&nd, &na, len, seq, n_negreg, negreg);
 	free(negreg);
 	msp_neg_sample(&nd, (int64_t)(pd.n / frac_pos * (1.0 - frac_pos) + .499), &x);
 	msp_neg_sample(&na, (int64_t)(pa.n / frac_pos * (1.0 - frac_pos) + .499), &x);
-	return 0;
+	msp_write_tdata(d, &pd, &nd, cid, 0, ext, len, seq);
+	msp_write_tdata(d, &pa, &na, cid, 1, ext, len, seq);
 }
 
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos)
 {
 	int32_t len;
 	const char *name, *seq;
+	msp_tdata_t *d;
+	d = MSP_CALLOC(msp_tdata_t, 1);
 	while ((len = msp_fastx_read(fx, &name, &seq)) >= 0) {
 		int32_t cid;
-		int64_t n;
 		cid = msp_strmap_get(bed->h, name);
 		if (cid < 0) continue; // skip if not found in the BED file
-		msp_gen_train_seq(bed, cid, len, (uint8_t*)seq, ext, frac_pos, &n);
+		msp_gen_train_seq(d, bed, cid, len, (uint8_t*)seq, ext, frac_pos);
 	}
-	return 0;
+	return d;
 }

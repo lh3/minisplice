@@ -44,8 +44,14 @@ typedef struct {
 } msp_bed_t;
 
 typedef struct {
+	int32_t cid;
 	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg
-	uint8_t *seq;
+	char *seq;
+} msp_tdata1_t;
+
+typedef struct {
+	int64_t n[2], m[2];
+	msp_tdata1_t *a[2];
 } msp_tdata_t;
 
 extern int msp_verbose;

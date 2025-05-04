@@ -50,10 +50,13 @@ int main_gentrain(int argc, char *argv[])
 	ketopt_t o = KETOPT_INIT;
 	msp_bed_t *bed;
 	msp_file_t *fx;
-	int32_t c, ext = 100;
+	int32_t c, k, ext = 100;
 	double frac_pos = 0.25;
+	msp_tdata_t *d;
+	kstring_t out = {0,0,0};
+	int64_t i;
 
-	while ((c = ketopt(&o, argc, argv, 1, "", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "l:p:", 0)) >= 0) {
 	}
 	if (argc - o.ind < 2) {
 		fprintf(stderr, "Usage: minisplice gentrain [options] <in.bed> <in.fastx>\n");
@@ -71,8 +74,18 @@ int main_gentrain(int argc, char *argv[])
 		fprintf(stderr, "ERROR: fail to open FASTX file '%s'\n", argv[o.ind+1]);
 		return 1;
 	}
-	msp_gen_train(bed, fx, ext, frac_pos);
+	d = msp_gen_train(bed, fx, ext, frac_pos);
 	msp_file_close(fx);
+	for (k = 0; k < 2; ++k) {
+		for (i = 0; i < d->n[k]; ++i) {
+			uint64_t x = d->a[k][i].x;
+			int32_t cid = d->a[k][i].cid;
+			out.l = 0;
+			msp_sprintf_lite(&out, "%s\t%ld\t%c\t%c\t%c\n", bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], "DA"[x>>1&1], "PN"[x&1]);
+			fwrite(out.s, 1, out.l, stdout);
+		}
+	}
+	free(out.s);
 	msp_bed_destroy(bed);
 	return 0;
 }
