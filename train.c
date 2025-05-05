@@ -12,11 +12,12 @@ static kann_t *msp_model_gen(int n_layer, int len, int k_size, int n_flt, int n_
 	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
 	for (i = 0; i < n_layer; ++i) {
 		t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
+		if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 		t = kad_max1d(t, 3, 3, 0);
 	}
+	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
-	t = kann_layer_dense(t, n_fc);
-	t = kad_relu(t);
+	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	return kann_new(kann_layer_cost(t, 2, KANN_C_CEB), 0);
 }
@@ -66,12 +67,12 @@ int main_train0(int argc, char *argv[])
 	ketopt_t o = KETOPT_INIT;
 	int c, n_layer = 2, k_size = 5, n_flt = 32, n_fc = 64, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10;
-	float lr = 0.001f;
+	float lr = 0.001f, dropout = 0.2f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:l:f:m:b:r:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:l:f:m:b:r:d:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'l') n_layer = atoi(o.arg);
@@ -79,6 +80,7 @@ int main_train0(int argc, char *argv[])
 		else if (c == 'm') max_epoch = atoi(o.arg);
 		else if (c == 'b') mb_sz = atoi(o.arg);
 		else if (c == 'r') lr = atof(o.arg);
+		else if (c == 'd') dropout = atof(o.arg);
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
@@ -89,6 +91,7 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "  -r FLOAT   learning rate [%g]\n", lr);
 		fprintf(stderr, "  -m INT     max number of epoches [%d]\n", max_epoch);
 		fprintf(stderr, "  -b INT     minibatch size [%d]\n", mb_sz);
+		fprintf(stderr, "  -d FLOAT   dropout [%g]\n", dropout);
 		fprintf(stderr, "  -t INT     number of threads [%d]\n", n_thread);
 		return 1;
 	}
@@ -102,7 +105,7 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] read %d labels and %ld sequences of length %d\n", __func__, d->n_label, (long)d->n, d->len);
 	f = msp_s2fdata(d);
 	msp_sdata_destroy(d);
-	ann = msp_model_gen(n_layer, f->len, k_size, n_flt, n_fc, 0.0f);
+	ann = msp_model_gen(n_layer, f->len, k_size, n_flt, n_fc, dropout);
 	assert(ann);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
 	kann_train_fnn1(ann, lr, mb_sz, max_epoch, max_drop_streak, 0.2f, f->n, f->x, f->y);
