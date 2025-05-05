@@ -89,13 +89,14 @@ int main_train0(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
 	int c, n_layer = 2, k_size = 5, n_flt = 32, n_fc = 64, max_epoch = 100, mb_sz = 64, n_thread = 1;
-	int max_drop_streak = 10, seed = 11, use_3piece = 0;
-	float lr = 0.001f, dropout = 0.2f;
+	int max_drop_streak = 10, seed = 11, use_3piece = 0, print_model = 0;
+	float lr = 0.001f, dropout = 0.3f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
+	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:l:f:m:b:r:d:s:3", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:l:f:m:b:r:d:s:3i:o:p", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'l') n_layer = atoi(o.arg);
@@ -106,6 +107,9 @@ int main_train0(int argc, char *argv[])
 		else if (c == 'd') dropout = atof(o.arg);
 		else if (c == 's') seed = atoi(o.arg);
 		else if (c == '3') use_3piece = 1;
+		else if (c == 'i') fn_in = o.arg;
+		else if (c == 'o') fn_out = o.arg;
+		else if (c == 'p') print_model = 1;
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
@@ -122,10 +126,15 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "    -b INT     minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "    -s INT     random seed [%d]\n", seed);
 		fprintf(stderr, "    -t INT     number of threads [%d]\n", n_thread);
+		fprintf(stderr, "  Model I/O:\n");
+		fprintf(stderr, "    -i FILE    input model []\n");
+		fprintf(stderr, "    -o FILE    output model []\n");
+		fprintf(stderr, "    -p         print model structure\n");
 		fprintf(stderr, "Input format:\n");
 		fprintf(stderr, "  Two columns: integer label, and fixed-length sequence\n");
 		return 1;
 	}
+
 	d = msp_sdata_read(argv[o.ind]);
 	if (d == 0) {
 		if (msp_verbose >= 1)
@@ -136,12 +145,23 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "[M::%s] read %d labels and %ld sequences of length %d\n", __func__, d->n_label, (long)d->n, d->len);
 	f = msp_s2fdata(d);
 	msp_sdata_destroy(d);
-	kann_srand(seed);
-	if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
+
+	if (fn_in) ann = kann_load(fn_in);
+	else if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
 	else ann = msp_model_gen(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
 	assert(ann);
+
+	if (print_model) {
+		kad_print_graph(stdout, ann->n, ann->v);
+		goto end_train;
+	}
+
+	kann_srand(seed);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
 	kann_train_fnn1(ann, lr, mb_sz, max_epoch, max_drop_streak, 0.2f, f->n, f->x, f->y);
+	if (fn_out) kann_save(fn_out, ann);
+
+end_train:
 	kann_delete(ann);
 	msp_fdata_destroy(f);
 	return 0;
