@@ -5,7 +5,7 @@
 #include "msppriv.h"
 #include "ketopt.h"
 
-static kann_t *msp_model_gen(int n_layer, int len, int k_size, int n_flt, int n_fc, float dropout)
+static kann_t *msp_model_gen(int n_out, int len, int n_layer, int k_size, int n_flt, int n_fc, float dropout)
 {
 	kad_node_t *t;
 	int i;
@@ -19,10 +19,10 @@ static kann_t *msp_model_gen(int n_layer, int len, int k_size, int n_flt, int n_
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
-	return kann_new(kann_layer_cost(t, 2, KANN_C_CEB), 0);
+	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
 }
 
-static kann_t *msp_model_gen2(int n_layer, int len, int k_size, int n_flt, int n_fc, float dropout)
+static kann_t *msp_model_gen2(int n_out, int len, int n_layer, int k_size, int n_flt, int n_fc, float dropout)
 {
 	kad_node_t *t, *s[3];
 	int i, k, len_end = len / 4;
@@ -42,7 +42,7 @@ static kann_t *msp_model_gen2(int n_layer, int len, int k_size, int n_flt, int n
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
-	return kann_new(kann_layer_cost(t, 2, KANN_C_CEB), 0);
+	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
 }
 
 typedef struct {
@@ -110,16 +110,20 @@ int main_train0(int argc, char *argv[])
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
 		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "  -l INT     number of 1d CNN layers [%d]\n", n_layer);
-		fprintf(stderr, "  -k INT     kernel size [%d]\n", k_size);
-		fprintf(stderr, "  -f INT     number of filters [%d]\n", n_flt);
-		fprintf(stderr, "  -3         use a 3-piece model\n");
-		fprintf(stderr, "  -r FLOAT   learning rate [%g]\n", lr);
-		fprintf(stderr, "  -m INT     max number of epoches [%d]\n", max_epoch);
-		fprintf(stderr, "  -b INT     minibatch size [%d]\n", mb_sz);
-		fprintf(stderr, "  -d FLOAT   dropout [%g]\n", dropout);
-		fprintf(stderr, "  -s INT     random seed [%d]\n", seed);
-		fprintf(stderr, "  -t INT     number of threads [%d]\n", n_thread);
+		fprintf(stderr, "  Model construction:\n");
+		fprintf(stderr, "    -l INT     number of 1d CNN layers [%d]\n", n_layer);
+		fprintf(stderr, "    -k INT     kernel size [%d]\n", k_size);
+		fprintf(stderr, "    -f INT     number of filters [%d]\n", n_flt);
+		fprintf(stderr, "    -d FLOAT   dropout [%g]\n", dropout);
+		fprintf(stderr, "    -3         use a 3-piece model\n");
+		fprintf(stderr, "  Model training:\n");
+		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
+		fprintf(stderr, "    -m INT     max number of epoches [%d]\n", max_epoch);
+		fprintf(stderr, "    -b INT     minibatch size [%d]\n", mb_sz);
+		fprintf(stderr, "    -s INT     random seed [%d]\n", seed);
+		fprintf(stderr, "    -t INT     number of threads [%d]\n", n_thread);
+		fprintf(stderr, "Input format:\n");
+		fprintf(stderr, "  Two columns: integer label, and fixed-length sequence\n");
 		return 1;
 	}
 	d = msp_sdata_read(argv[o.ind]);
@@ -133,8 +137,8 @@ int main_train0(int argc, char *argv[])
 	f = msp_s2fdata(d);
 	msp_sdata_destroy(d);
 	kann_srand(seed);
-	if (use_3piece) ann = msp_model_gen2(n_layer, f->len, k_size, n_flt, n_fc, dropout);
-	else ann = msp_model_gen(n_layer, f->len, k_size, n_flt, n_fc, dropout);
+	if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
+	else ann = msp_model_gen(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
 	assert(ann);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
 	kann_train_fnn1(ann, lr, mb_sz, max_epoch, max_drop_streak, 0.2f, f->n, f->x, f->y);
