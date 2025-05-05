@@ -359,7 +359,7 @@ void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
 	int32_t k;
 	int64_t i, j;
 	s = MSP_CALLOC(char, d->len + 1);
-	fprintf(fp, "LN\t%ld\n", (long)d->len);
+	fprintf(fp, "L\t%ld\n", (long)d->len);
 	for (k = 0; k < 2; ++k) {
 		for (i = 0; i < d->n[k]; ++i) {
 			uint64_t x = d->a[k][i].x;
@@ -367,7 +367,7 @@ void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
 			for (j = 0; j < d->len; ++j)
 				s[j] = "ACGTN"[d->a[k][i].seq[j]];
 			out.l = 0;
-			msp_sprintf_lite(&out, "%c%c\t%s\t%ld\t%c\t%s\n", "DA"[x>>1&1], "PN"[x&1], cid < 0? "*" : bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], s);
+			msp_sprintf_lite(&out, "%c\t%s\t%ld\t%c\t%d\t%s\n", "DA"[x>>1&1], cid < 0? "*" : bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], (x&1)^1, s);
 			fwrite(out.s, 1, out.l, fp);
 		}
 	}

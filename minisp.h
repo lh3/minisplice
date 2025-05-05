@@ -44,7 +44,7 @@ typedef struct {
 	msp_strmap_t *h;
 } msp_bed_t;
 
-typedef struct {
+typedef struct { // training data
 	int32_t cid;
 	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg
 	uint8_t *seq;
@@ -56,6 +56,18 @@ typedef struct {
 	msp_tdata1_t *a[2];
 } msp_tdata_t;
 
+typedef struct { // simplified training data
+	uint32_t label;
+	uint8_t *seq;
+} msp_sdata1_t;
+
+typedef struct {
+	int32_t len;
+	uint32_t n_label;
+	int64_t n, m;
+	msp_sdata1_t *a;
+} msp_sdata_t;
+
 extern int msp_verbose;
 
 #ifdef __cplusplus
@@ -65,9 +77,10 @@ extern "C" {
 void msp_file_close(msp_file_t *f);
 
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
-msp_tdata_t *msp_tdata_read(const char *fn);
 void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
 void msp_tdata_destroy(msp_tdata_t *d);
+msp_sdata_t *msp_sdata_read(const char *fn);
+void msp_sdata_destroy(msp_sdata_t *d);
 
 // FASTX reader
 msp_file_t *msp_fastx_open(const char *fn);

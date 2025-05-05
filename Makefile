@@ -1,6 +1,6 @@
 CC=			gcc
 CFLAGS=		-g -std=c99 -Wall -Wc++-compat -O3
-CPPFLAGS=
+CPPFLAGS=	-DHAVE_PTHREAD
 INCLUDES=
 OBJS=		kautodiff.o kann.o reader.o misc.o strmap.o bed.o train.o
 PROG=		minisplice
@@ -31,7 +31,10 @@ depend:
 # DO NOT DELETE
 
 bed.o: msppriv.h minisp.h ksort.h
+kann.o: kann.h kautodiff.h
+kautodiff.o: kautodiff.h
 main.o: msppriv.h minisp.h ketopt.h
 misc.o: msppriv.h minisp.h
 reader.o: msppriv.h minisp.h kseq.h
 strmap.o: msppriv.h minisp.h khashl.h
+train.o: kann.h kautodiff.h msppriv.h minisp.h ketopt.h

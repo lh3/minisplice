@@ -221,13 +221,13 @@ msp_bed_t *msp_bed_read(const char *fn)
 }
 
 /****************
- * tdata reader *
+ * sdata reader *
  ****************/
 
-msp_tdata_t *msp_tdata_read(const char *fn)
+msp_sdata_t *msp_sdata_read(const char *fn)
 {
 	msp_file_t *fp;
-	msp_tdata_t *d;
+	msp_sdata_t *d;
 	kstring_t str = {0,0,0};
 	kstream_t *ks;
 	int32_t ret;
@@ -235,48 +235,41 @@ msp_tdata_t *msp_tdata_read(const char *fn)
 	fp = msp_file_open_by_line(fn);
 	if (fp == 0) return 0;
 	ks = (kstream_t*)fp->fp;
-	d = MSP_CALLOC(msp_tdata_t, 1);
+	d = MSP_CALLOC(msp_sdata_t, 1);
 	while ((ret = ks_getuntil(ks, KS_SEP_LINE, &str, 0)) >= 0) {
 		char *p, *q, *seq = 0;
-		int32_t i;
-		uint64_t x = (uint64_t)-1;
+		int32_t i, j, len = -1;
+		uint32_t label;
 		for (p = q = str.s, i = 0;; ++p) {
-			if (*p == 0 || *p == '\t') {
+			if (*p == 0 || *p == '\t' || *p == ' ') {
 				int c = *p;
 				*p = 0;
-				if (i == 0) {
-					if (strncmp(str.s, "DP", 2) == 0) x = 0<<1|0;
-					else if (strncmp(str.s, "DN", 2) == 0) x = 0<<1|1;
-					else if (strncmp(str.s, "AP", 2) == 0) x = 1<<1|0;
-					else if (strncmp(str.s, "AN", 2) == 0) x = 1<<1|1;
-				} else if (i == 1) {
-					if (strncmp(str.s, "LN", 2) == 0) {
-						d->len = atoi(q);
-						break;
-					}
-					if (x == (uint64_t)-1) break;
-				} else if (i == 2) {
-					x |= (uint64_t)atol(q) << 3;
-				} else if (i == 3) {
-					x |= *q == '+'? 0<<2 : 1<<2;
-				} else if (i == 4) {
-					seq = q;
-				}
+				if (i == 0) label = atol(q);
+				else if (i == 1) seq = q, len = p - q;
 				++i, q = p + 1;
-				if (c == 0 || i >= 5) break;
+				if (c == 0 || i >= 2) break;
 			}
 		}
-		if (x != (uint64_t)-1 && seq) {
-			int32_t j, w = x>>1&1;
-			msp_tdata1_t *p;
-			MSP_GROW(msp_tdata1_t, d->a[w], d->n[w], d->m[w]);
-			p = &d->a[w][d->n[w]++];
-			p->cid = -1;
-			p->x = x;
-			p->seq = MSP_CALLOC(uint8_t, d->len);
+		if (i >= 2 && seq) {
+			msp_sdata1_t *r;
+			d->n_label = d->n_label > label + 1? d->n_label : label + 1;
+			if (d->len <= 0) d->len = len;
+			else if (d->len != len) continue; // TODO: give a warning!
+			MSP_GROW(msp_sdata1_t, d->a, d->n, d->m);
+			r = &d->a[d->n++];
+			r->label = label;
+			r->seq = MSP_CALLOC(uint8_t, d->len);
 			for (j = 0; j < d->len; ++j)
-				p->seq[j] = msp_nt6_table[(uint8_t)seq[j]] - 1;
+				r->seq[j] = msp_nt6_table[(uint8_t)seq[j]] - 1;
 		}
 	}
 	return d;
+}
+
+void msp_sdata_destroy(msp_sdata_t *d)
+{
+	int32_t i;
+	for (i = 0; i < d->n; ++i)
+		free(d->a[i].seq);
+	free(d->a); free(d);
 }
