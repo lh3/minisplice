@@ -178,7 +178,7 @@ static void msp_uint64_dedup(msp64a_t *t)
 	t->n = k;
 }
 
-static void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
+void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
 {
 	const msp_bedctg_t *c = &bed->c[cid];
 	int64_t i, j, n_noncan = 0;

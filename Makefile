@@ -1,8 +1,8 @@
 CC=			gcc
-CFLAGS=		-g -std=c99 -Wall -Wc++-compat -O3
+CFLAGS=		-g -std=c99 -Wall -Wno-unused-function -Wc++-compat -O3
 CPPFLAGS=	-DHAVE_PTHREAD
 INCLUDES=
-OBJS=		kautodiff.o kann.o reader.o misc.o strmap.o bed.o train.o
+OBJS=		kautodiff.o kann.o reader.o misc.o strmap.o bed.o train.o apply.o
 PROG=		minisplice
 LIBS=		-lpthread -lz -lm
 
@@ -30,6 +30,7 @@ depend:
 
 # DO NOT DELETE
 
+apply.o: kann.h kautodiff.h msppriv.h minisp.h ketopt.h
 bed.o: msppriv.h minisp.h ksort.h
 kann.o: kann.h kautodiff.h
 kautodiff.o: kautodiff.h

@@ -9,6 +9,7 @@
 int main_bed2bed(int argc, char *argv[]);
 int main_gentrain(int argc, char *argv[]);
 int main_train0(int argc, char *argv[]);
+int main_apply(int argc, char *argv[]);
 
 static int usage(FILE *fp)
 {
@@ -16,7 +17,8 @@ static int usage(FILE *fp)
 	fprintf(fp, "Commands:\n");
 	fprintf(fp, "  gentrain     generate training data\n");
 	fprintf(fp, "  train0       core model training\n");
-	fprintf(fp, "  bed2bed      convert BED12 to BED6\n");
+	fprintf(fp, "  apply        predict\n");
+//	fprintf(fp, "  bed2bed      convert BED12 to BED6\n");
 	fprintf(fp, "  version      print the version number\n");
 	return fp == stdout? 0 : 1;
 }
@@ -29,6 +31,7 @@ int main(int argc, char *argv[])
 	else if (strcmp(argv[1], "bed2bed") == 0) ret = main_bed2bed(argc-1, argv+1);
 	else if (strcmp(argv[1], "gentrain") == 0) ret = main_gentrain(argc-1, argv+1);
 	else if (strcmp(argv[1], "train0") == 0) ret = main_train0(argc-1, argv+1);
+	else if (strcmp(argv[1], "apply") == 0) ret = main_apply(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
 		return 0;
