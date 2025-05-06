@@ -50,7 +50,7 @@ void msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t mb_size
 	}
 }
 */
-int main_apply(int argc, char *argv[])
+int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
 	int32_t c, n_thread = 1, mb_sz = 128, type = 0; // 0 for donor and 1 for acceptor
@@ -66,7 +66,7 @@ int main_apply(int argc, char *argv[])
 		else if (c == 'e') fn_bed = o.arg;
 	}
 	if (argc - o.ind < 2) {
-		fprintf(stderr, "Usage: minisplice apply [options] <in.kan> <in.fastx>\n");
+		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  -a          acceptor model (donor model by default)\n");
 		fprintf(stderr, "  -e FILE     annotated splice sites in BED12 []\n");
@@ -77,7 +77,6 @@ int main_apply(int argc, char *argv[])
 
 	ann = kann_load(argv[o.ind]);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
-	printf("%d\n", kann_dim_in(ann));
 	fx = msp_fastx_open(argv[o.ind+1]);
 	assert(ann && fx);
 	if (fn_bed) {
