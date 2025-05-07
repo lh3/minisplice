@@ -54,7 +54,7 @@ typedef struct {
 void msp_seq2vec(int32_t len, const uint8_t *s, float *x)
 {
 	int32_t i, c;
-	memset(x, 0, len * sizeof(float));
+	memset(x, 0, len * 4 * sizeof(float));
 	for (c = 0; c < 4; ++c) {
 		float *x1 = &x[c * len];
 		for (i = 0; i < len; ++i)

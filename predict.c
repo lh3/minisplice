@@ -19,9 +19,9 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 			x = (x << 2 | c) & 0xf;
 			if (type == 0) { // donor
 				if (x == (2<<2|3)) z = (i-1)<<3 | 0<<2 | 0<<1; // GT
-				else if (x == (0<<2|1)) z = (i+1)<<3 | 0<<2 | 1<<1; // AC
+				else if (x == (0<<2|1)) z = (i+1)<<3 | 1<<2 | 0<<1; // AC
 			} else { // acceptor
-				if (x == (0<<2|2)) z = (i+1)<<3 | 1<<2 | 0<<1; // AG
+				if (x == (0<<2|2)) z = (i+1)<<3 | 0<<2 | 1<<1; // AG
 				else if (x == (1<<2|3)) z = (i-1)<<3 | 1<<2 | 1<<1; // CT
 			}
 			if (z != (uint64_t)-1 && (z>>1&1) == type) {
@@ -62,15 +62,18 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 		y1 = ann->v[i_out]->x;
 		for (l = 0; l < k; ++l)
 			t->a[mb2i[l]].f = y1[l * n_out + 1];
+		#if 0
 		for (l = 0; l < k; ++l) {
 			int32_t j;
 			msp_pdata1_t *p = &t->a[mb2i[l]];
 			msp_get_seq_in_place(s, len, seq, p->x, ext);
+			msp_seq2vec(alen, s, x1);
 			for (j = 0; j < alen; ++j) s[j] = "ACGTN"[s[j]];
 			fprintf(stderr, "%ld\t%c\t%c\t%f\t%f\t", (long)(p->x>>3), "+-"[p->x>>2&1], "DA"[p->x>>1&1], y1[l*n_out], y1[l*n_out+1]);
 			fwrite(s, 1, alen, stderr);
 			fputc('\n', stderr);
 		}
+		#endif
 		i = j;
 	}
 	free(mb2i); free(x1); free(s);
