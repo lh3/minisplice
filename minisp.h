@@ -46,7 +46,7 @@ typedef struct {
 
 typedef struct { // training data
 	int32_t cid;
-	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg
+	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg TODO: flip neg to pos
 	uint8_t *seq;
 } msp_tdata1_t;
 
@@ -68,7 +68,7 @@ typedef struct {
 	msp_sdata1_t *a;
 } msp_sdata_t;
 
-typedef struct {
+typedef struct { // prediction data
 	uint64_t x;
 	float f;
 	int32_t s;
@@ -78,6 +78,18 @@ typedef struct {
 	int64_t n, m;
 	msp_pdata1_t *a;
 } msp_pdata_t;
+
+typedef struct { // accuracy statistics in each bin
+	int64_t mt, mp; // marginal total, marginal positives
+	int64_t tp, fp, tn, fn; // derived from mt and mp
+} msp_evalbin_t;
+
+typedef struct {
+	float step;
+	int32_t n_bin;
+	int64_t tot_t, tot_p;
+	msp_evalbin_t bin[];
+} msp_eval_t;
 
 extern int msp_verbose;
 

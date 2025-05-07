@@ -187,7 +187,8 @@ void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, 
 		if (b->n_blk < 2 || b->strand == 0) continue;
 		for (j = 1; j < b->n_blk; ++j) {
 			int64_t p = b->blk[j-1].en, q = b->blk[j].st;
-			assert(0 < p && p < q && q < len);
+			if (q > len) continue; // for testing smaller sequences
+			assert(0 < p && p < q);
 			//fprintf(stderr, "%c%c-%c%c\t%c\n", "ACGTN"[seq[p]], "ACGTN"[seq[p+1]], "ACGTN"[seq[q-2]], "ACGTN"[seq[q-1]], b->strand > 0? '+' : '-');
 			if (b->strand > 0) {
 				if (seq[p] == 2 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 2) { // GT-AG on the forward strand
