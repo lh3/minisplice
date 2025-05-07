@@ -24,13 +24,14 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 				if (x == (0<<2|2)) z = (i+1)<<3 | 1<<2 | 0<<1; // AG
 				else if (x == (1<<2|3)) z = (i-1)<<3 | 1<<2 | 1<<1; // CT
 			}
-			if (z != (uint64_t)-1) {
+			if (z != (uint64_t)-1 && (z>>1&1) == type) {
 				MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
 				t->a[t->n++].x = z;
 			}
 		} else l = 0, x = 0;
 	}
 
+	kann_switch(ann, 0);
 	i_out = kann_find(ann, KANN_F_OUT, 0);
 	n_in = kann_dim_in(ann);
 	n_out = kann_dim_out(ann);
@@ -40,15 +41,15 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 	ext = (alen - 2) / 2;
 
 	s = MSP_CALLOC(uint8_t, alen);
-	x1 = MSP_CALLOC(float, mb_sz * kann_dim_in(ann));
+	x1 = MSP_CALLOC(float, mb_sz * n_in);
 	mb2i = MSP_CALLOC(int64_t, mb_sz);
+	kann_feed_bind(ann, KANN_F_IN, 0, &x1);
 	for (i = 0; i < t->n; ++i)
 		t->a[i].f = -1.0f, t->a[i].s = -1;
 	for (i = 0; i < t->n;) {
 		int64_t j;
 		int32_t k, l;
 		const float *y1;
-		fprintf(stderr, "%ld\n", (long)i);
 		for (j = i, k = 0; j < t->n && k < mb_sz; ++j) {
 			int rc;
 			rc = msp_get_seq_in_place(s, len, seq, t->a[j].x, ext);
@@ -56,11 +57,20 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 			msp_seq2vec(alen, s, &x1[k * n_in]);
 			mb2i[k++] = j;
 		}
-		kann_feed_bind(ann, KANN_F_IN, 0, &x1);
+		kann_set_batch_size(ann, k);
 		kann_eval_out(ann);
 		y1 = ann->v[i_out]->x;
 		for (l = 0; l < k; ++l)
 			t->a[mb2i[l]].f = y1[l * n_out + 1];
+		for (l = 0; l < k; ++l) {
+			int32_t j;
+			msp_pdata1_t *p = &t->a[mb2i[l]];
+			msp_get_seq_in_place(s, len, seq, p->x, ext);
+			for (j = 0; j < alen; ++j) s[j] = "ACGTN"[s[j]];
+			fprintf(stderr, "%ld\t%c\t%c\t%f\t%f\t", (long)(p->x>>3), "+-"[p->x>>2&1], "DA"[p->x>>1&1], y1[l*n_out], y1[l*n_out+1]);
+			fwrite(s, 1, alen, stderr);
+			fputc('\n', stderr);
+		}
 		i = j;
 	}
 	free(mb2i); free(x1); free(s);
