@@ -40,7 +40,10 @@ int64_t msp_sprintf_lite(kstring_t *s, const char *fmt, ...);
 
 msp192_t *msp_bed_gen_negreg(const msp_bed_t *bed, int32_t cid, int64_t *nn);
 void msp_bed_format(kstring_t *out, const msp_bed1_t *b);
+
+void msp_seq2vec(int32_t len, const uint8_t *s, float *x);
 void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq);
+int msp_get_seq_in_place(uint8_t *s, int64_t len, const uint8_t *seq, uint64_t x, int32_t ext);
 
 double msp_cputime(void);
 double msp_realtime(void);

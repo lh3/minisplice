@@ -51,6 +51,18 @@ typedef struct {
 	float **x, **y;
 } msp_fdata_t;
 
+void msp_seq2vec(int32_t len, const uint8_t *s, float *x)
+{
+	int32_t i, c;
+	memset(x, 0, len * sizeof(float));
+	for (c = 0; c < 4; ++c) {
+		float *x1 = &x[c * len];
+		for (i = 0; i < len; ++i)
+			if (s[i] == c)
+				x1[i] = 1.0f;
+	}
+}
+
 static msp_fdata_t *msp_s2fdata(const msp_sdata_t *d)
 {
 	int64_t i;
@@ -60,17 +72,11 @@ static msp_fdata_t *msp_s2fdata(const msp_sdata_t *d)
 	f->x = MSP_CALLOC(float*, f->n);
 	f->y = MSP_CALLOC(float*, f->n);
 	for (i = 0; i < f->n; ++i) {
-		int32_t j, c;
 		f->x[i] = MSP_CALLOC(float, 4 * f->len);
 		f->y[i] = MSP_CALLOC(float, f->n_label);
 		assert(d->a[i].label < f->n_label);
 		f->y[i][d->a[i].label] = 1.0f;
-		for (c = 0; c < 4; ++c) {
-			float *x1 = &f->x[i][c * f->len];
-			for (j = 0; j < f->len; ++j)
-				if (d->a[i].seq[j] == c)
-					x1[j] = 1.0f;
-		}
+		msp_seq2vec(f->len, d->a[i].seq, f->x[i]);
 	}
 	return f;
 }

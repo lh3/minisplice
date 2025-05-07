@@ -270,11 +270,10 @@ static void msp_gen_neg(msp64a_t *td, msp64a_t *ta, int64_t len, const uint8_t *
 	}
 }
 
-static uint8_t *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
+int msp_get_seq_in_place(uint8_t *s, int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
 {
 	int64_t i, y = x>>3;
 	int32_t l, r, k;
-	uint8_t *s;
 	if (!(x>>2&1)) { // forward
 		if (!(x>>1&1)) l = ext, r = ext + 2; // donor
 		else l = ext + 2, r = ext;
@@ -282,9 +281,9 @@ static uint8_t *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t
 		if (!(x>>1&1)) l = ext + 2, r = ext;
 		else l = ext, r = ext + 2;
 	}
-	if (y - l < 0 || y + r > len) return 0; // out of range
+	if (y - l < 0 || y + r > len) return -1; // out of range
 	for (i = y - l; i < y + r; ++i)
-		if (seq[i] > 3) return 0; // ambiguous base
+		if (seq[i] > 3) return -1; // ambiguous base
 	s = MSP_CALLOC(uint8_t, l + r);
 	if (!(x>>2&1)) {
 		memcpy(s, &seq[y - l], l + r);
@@ -292,7 +291,17 @@ static uint8_t *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t
 		for (i = y + r - 1, k = 0; i >= y - l; --i)
 			s[k++] = 3 - seq[i];
 	}
-	return s;
+	return 0;
+}
+
+static uint8_t *msp_get_seq(int64_t len, const uint8_t *seq, uint64_t x, int32_t ext)
+{
+	uint8_t *s;
+	s = MSP_CALLOC(uint8_t, ext * 2 + 2); // we can avoid this allocation but it rarely fails anyway
+	if (msp_get_seq_in_place(s, len, seq, x, ext) < 0) {
+		free(s);
+		return 0;
+	} else return s;
 }
 
 static void msp_write_tdata(msp_tdata_t *d, msp64a_t *p, msp64a_t *n, int32_t cid, int w, int32_t ext, int64_t len, const uint8_t *seq)

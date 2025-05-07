@@ -68,6 +68,17 @@ typedef struct {
 	msp_sdata1_t *a;
 } msp_sdata_t;
 
+typedef struct {
+	uint64_t x;
+	float f;
+	int32_t s;
+} msp_pdata1_t;
+
+typedef struct {
+	int64_t n, m;
+	msp_pdata1_t *a;
+} msp_pdata_t;
+
 extern int msp_verbose;
 
 #ifdef __cplusplus
