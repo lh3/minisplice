@@ -7,7 +7,7 @@
 
 void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, int32_t mb_sz, int32_t type)
 {
-	int32_t l, k, ext, alen, n_in, n_out;
+	int32_t l, k, ext, alen, n_in, n_out, i_out;
 	int64_t i, *mb2i;
 	uint8_t x, *s;
 	float *x1;
@@ -31,6 +31,7 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 		} else l = 0, x = 0;
 	}
 
+	i_out = kann_find(ann, KANN_F_OUT, 0);
 	n_in = kann_dim_in(ann);
 	n_out = kann_dim_out(ann);
 	assert(n_in % 4 == 0 && n_out == 2);
@@ -47,6 +48,7 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 		int64_t j;
 		int32_t k, l;
 		const float *y1;
+		fprintf(stderr, "%ld\n", (long)i);
 		for (j = i, k = 0; j < t->n && k < mb_sz; ++j) {
 			int rc;
 			rc = msp_get_seq_in_place(s, len, seq, t->a[j].x, ext);
@@ -54,7 +56,9 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 			msp_seq2vec(alen, s, &x1[k * n_in]);
 			mb2i[k++] = j;
 		}
-		y1 = kann_apply1n_to(ann, k, x1, KANN_F_OUT, 0);
+		kann_feed_bind(ann, KANN_F_IN, 0, &x1);
+		kann_eval_out(ann);
+		y1 = ann->v[i_out]->x;
 		for (l = 0; l < k; ++l)
 			t->a[mb2i[l]].f = y1[l * n_out + 1];
 		i = j;

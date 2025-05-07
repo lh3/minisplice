@@ -284,7 +284,6 @@ int msp_get_seq_in_place(uint8_t *s, int64_t len, const uint8_t *seq, uint64_t x
 	if (y - l < 0 || y + r > len) return -1; // out of range
 	for (i = y - l; i < y + r; ++i)
 		if (seq[i] > 3) return -1; // ambiguous base
-	s = MSP_CALLOC(uint8_t, l + r);
 	if (!(x>>2&1)) {
 		memcpy(s, &seq[y - l], l + r);
 	} else {
