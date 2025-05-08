@@ -207,9 +207,17 @@ int main_predict(int argc, char *argv[])
 		assert(bed);
 		e = msp_eval(ann, fx, bed, mb_sz, type, step);
 		msp_bed_destroy(bed);
+		fprintf(fp, "CC\tTT  #allSites\n");
+		fprintf(fp, "CC\tTP  #posSites\n");
+		fprintf(fp, "CC\tST  step\n");
+		fprintf(fp, "CC\tNB  #bins\n");
+		fprintf(fp, "CC\tBN  bin  all  pos  TP  FP  TN  FN  FPR  SN\n");
+		fprintf(fp, "//\n");
+		fprintf(fp, "TT\t%ld\n", (long)e->tot_t);
+		fprintf(fp, "TP\t%ld\n", (long)e->tot_p);
 		fprintf(fp, "ST\t%g\n", step);
 		fprintf(fp, "NB\t%d\n", e->n_bin);
-		for (i = 0; i < e->n_bin; ++i) {
+		for (i = e->n_bin - 1; i > 0; --i) {
 			const msp_evalbin_t *b = &e->bin[i];
 			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4g\t%.4g\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
 				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn));
