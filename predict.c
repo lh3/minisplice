@@ -21,16 +21,18 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 		uint64_t z = (uint64_t)-1;
 		if (c < 4) {
 			x = (x << 2 | c) & 0xf;
-			if (type == 0) { // donor
-				if (x == (2<<2|3)) z = (i-1)<<3 | 0<<2 | 0<<1; // GT
-				else if (x == (0<<2|1)) z = (i+1)<<3 | 1<<2 | 0<<1; // AC
-			} else { // acceptor
-				if (x == (0<<2|2)) z = (i+1)<<3 | 0<<2 | 1<<1; // AG
-				else if (x == (1<<2|3)) z = (i-1)<<3 | 1<<2 | 1<<1; // CT
-			}
-			if (z != (uint64_t)-1 && (z>>1&1) == type) {
-				MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
-				t->a[t->n++].x = z;
+			if (++l >= 2) {
+				if (type == 0) { // donor
+					if (x == (2<<2|3)) z = (i-1)<<3 | 0<<2 | 0<<1; // GT
+					else if (x == (0<<2|1)) z = (i+1)<<3 | 1<<2 | 0<<1; // AC
+				} else { // acceptor
+					if (x == (0<<2|2)) z = (i+1)<<3 | 0<<2 | 1<<1; // AG
+					else if (x == (1<<2|3)) z = (i-1)<<3 | 1<<2 | 1<<1; // CT
+				}
+				if (z != (uint64_t)-1 && (z>>1&1) == type) {
+					MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
+					t->a[t->n++].x = z;
+				}
 			}
 		} else l = 0, x = 0;
 	}
