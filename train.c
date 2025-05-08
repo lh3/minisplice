@@ -88,7 +88,7 @@ static void msp_fdata_destroy(msp_fdata_t *f)
 int main_train0(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int c, k_size = 5, n_flt = 32, n_fc = 64, max_epoch = 100, mb_sz = 64, n_thread = 1;
+	int c, k_size = 5, n_flt = 32, n_fc = 64, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10, seed = 11, use_3piece = 0, print_model = 0;
 	float lr = 0.001f, dropout = 0.4f;
 	msp_sdata_t *d;
@@ -96,7 +96,7 @@ int main_train0(int argc, char *argv[])
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:b:r:d:s:3i:o:p", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:b:r:d:s:3i:o:pe:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
@@ -109,6 +109,7 @@ int main_train0(int argc, char *argv[])
 		else if (c == 'i') fn_in = o.arg;
 		else if (c == 'o') fn_out = o.arg;
 		else if (c == 'p') print_model = 1;
+		else if (c == 'e') min_epoch = atoi(o.arg);
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
@@ -120,6 +121,7 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "    -3         use a 3-piece model\n");
 		fprintf(stderr, "  Model training:\n");
 		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
+		fprintf(stderr, "    -e INT     min number of epoches [%d]\n", min_epoch);
 		fprintf(stderr, "    -m INT     max number of epoches [%d]\n", max_epoch);
 		fprintf(stderr, "    -b INT     minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "    -s INT     random seed [%d]\n", seed);
@@ -156,7 +158,7 @@ int main_train0(int argc, char *argv[])
 
 	kann_srand(seed);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
-	kann_train_fnn1(ann, lr, mb_sz, max_epoch, max_drop_streak, 0.2f, f->n, f->x, f->y);
+	kann_train_fnn1b(ann, lr, mb_sz, max_epoch, min_epoch, max_drop_streak, 0.2f, f->n, f->x, f->y);
 	if (fn_out) kann_save(fn_out, ann);
 
 end_train:
