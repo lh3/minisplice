@@ -30,12 +30,12 @@ depend:
 
 # DO NOT DELETE
 
-predict.o: kann.h kautodiff.h msppriv.h minisp.h ketopt.h
 bed.o: msppriv.h minisp.h ksort.h
 kann.o: kann.h kautodiff.h
 kautodiff.o: kautodiff.h
 main.o: msppriv.h minisp.h ketopt.h
 misc.o: msppriv.h minisp.h
+predict.o: kann.h kautodiff.h msppriv.h minisp.h ketopt.h ksort.h
 reader.o: msppriv.h minisp.h kseq.h
 strmap.o: msppriv.h minisp.h khashl.h
 train.o: kann.h kautodiff.h msppriv.h minisp.h ketopt.h
