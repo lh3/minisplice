@@ -181,7 +181,7 @@ static void msp_uint64_dedup(msp64a_t *t)
 void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, int64_t len, const uint8_t *seq)
 {
 	const msp_bedctg_t *c = &bed->c[cid];
-	int64_t i, j, n_noncan = 0;
+	int64_t i, j;
 	for (i = c->off; i < c->off + c->n; ++i) {
 		const msp_bed1_t *b = bed->a[i];
 		if (b->n_blk < 2 || b->strand == 0) continue;
@@ -191,27 +191,30 @@ void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, 
 			assert(0 < p && p < q);
 			//fprintf(stderr, "%c%c-%c%c\t%c\n", "ACGTN"[seq[p]], "ACGTN"[seq[p+1]], "ACGTN"[seq[q-2]], "ACGTN"[seq[q-1]], b->strand > 0? '+' : '-');
 			if (b->strand > 0) {
-				if (seq[p] == 2 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 2) { // GT-AG on the forward strand
+				if (seq[p] == 2 && seq[p+1] == 3) { // GT- on the forward strand
 					MSP_GROW(uint64_t, td->a, td->n, td->m);
 					td->a[td->n++] = p<<3 | 0<<2 | 0<<1 | 1;
+				}
+				if (seq[q-2] == 0 && seq[q-1] == 2) { // -AG on the forward strand
 					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
 					ta->a[ta->n++] = q<<3 | 0<<2 | 1<<1 | 1;
-				} else ++n_noncan;
+				}
 			} else if (b->strand < 0) {
-				if (seq[p] == 1 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 1) { // CT-AC on the reverse strand
-					MSP_GROW(uint64_t, td->a, td->n, td->m);
-					td->a[td->n++] = q<<3 | 1<<2 | 0<<1 | 1;
+				if (seq[p] == 1 && seq[p+1] == 3) { // CT- on the reverse strand (i.e. -AG)
 					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
 					ta->a[ta->n++] = p<<3 | 1<<2 | 1<<1 | 1;
-				} else ++n_noncan;
+				}
+				if (seq[q-2] == 0 && seq[q-1] == 1) { // -AC on the reverse strand (i.e. GT-)
+					MSP_GROW(uint64_t, td->a, td->n, td->m);
+					td->a[td->n++] = q<<3 | 1<<2 | 0<<1 | 1;
+				}
 			}
 		}
 	}
 	msp_uint64_dedup(td);
 	msp_uint64_dedup(ta);
 	if (msp_verbose >= 3)
-		fprintf(stderr, "[M::%s] collected %ld donors and %ld acceptors from \"%s\"; dropped %ld non-canonical introns\n",
-			__func__, (long)td->n, (long)ta->n, bed->h->a[cid], (long)n_noncan);
+		fprintf(stderr, "[M::%s] collected %ld donors and %ld acceptors from \"%s\"\n", __func__, (long)td->n, (long)ta->n, bed->h->a[cid]);
 }
 
 static inline double msp_splitmix64(uint64_t *x)
