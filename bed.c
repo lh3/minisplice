@@ -193,16 +193,16 @@ void msp_gen_pos(msp64a_t *td, msp64a_t *ta, const msp_bed_t *bed, int32_t cid, 
 			if (b->strand > 0) {
 				if (seq[p] == 2 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 2) { // GT-AG on the forward strand
 					MSP_GROW(uint64_t, td->a, td->n, td->m);
-					td->a[td->n++] = p<<3 | 0<<2 | 0<<1;
+					td->a[td->n++] = p<<3 | 0<<2 | 0<<1 | 1;
 					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
-					ta->a[ta->n++] = q<<3 | 0<<2 | 1<<1;
+					ta->a[ta->n++] = q<<3 | 0<<2 | 1<<1 | 1;
 				} else ++n_noncan;
 			} else if (b->strand < 0) {
 				if (seq[p] == 1 && seq[p+1] == 3 && seq[q-2] == 0 && seq[q-1] == 1) { // CT-AC on the reverse strand
 					MSP_GROW(uint64_t, td->a, td->n, td->m);
-					td->a[td->n++] = q<<3 | 1<<2 | 0<<1;
+					td->a[td->n++] = q<<3 | 1<<2 | 0<<1 | 1;
 					MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
-					ta->a[ta->n++] = p<<3 | 1<<2 | 1<<1;
+					ta->a[ta->n++] = p<<3 | 1<<2 | 1<<1 | 1;
 				} else ++n_noncan;
 			}
 		}
@@ -251,18 +251,18 @@ static void msp_gen_neg(msp64a_t *td, msp64a_t *ta, int64_t len, const uint8_t *
 					if (!rev) {
 						if (x == (2<<2|3)) { // GT on forward
 							MSP_GROW(uint64_t, td->a, td->n, td->m);
-							td->a[td->n++] = (i-1)<<3 | 0<<2 | 0<<1 | 1;
+							td->a[td->n++] = (i-1)<<3 | 0<<2 | 0<<1;
 						} else if (x == (0<<2|2)) { // AG on forward
 							MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
-							ta->a[ta->n++] = (i+1)<<3 | 0<<2 | 1<<1 | 1;
+							ta->a[ta->n++] = (i+1)<<3 | 0<<2 | 1<<1;
 						}
 					} else {
 						if (x == (0<<2|1)) { // AC on reverse
 							MSP_GROW(uint64_t, td->a, td->n, td->m);
-							td->a[td->n++] = (i+1)<<3 | 1<<2 | 0<<1 | 1;
+							td->a[td->n++] = (i+1)<<3 | 1<<2 | 0<<1;
 						} else if (x == (1<<2|3)) { // CT on reverse
 							MSP_GROW(uint64_t, ta->a, ta->n, ta->m);
-							ta->a[ta->n++] = (i-1)<<3 | 1<<2 | 1<<1 | 1;
+							ta->a[ta->n++] = (i-1)<<3 | 1<<2 | 1<<1;
 						}
 					}
 				}
@@ -376,7 +376,7 @@ void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d)
 			for (j = 0; j < d->len; ++j)
 				s[j] = "ACGTN"[d->a[k][i].seq[j]];
 			out.l = 0;
-			msp_sprintf_lite(&out, "%c\t%s\t%ld\t%c\t%d\t%s\n", "DA"[x>>1&1], cid < 0? "*" : bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], (x&1)^1, s);
+			msp_sprintf_lite(&out, "%c\t%s\t%ld\t%c\t%d\t%s\n", "DA"[x>>1&1], cid < 0? "*" : bed->h->a[cid], (long)(x>>3), "+-"[x>>2&1], x&1, s);
 			fwrite(out.s, 1, out.l, fp);
 		}
 	}

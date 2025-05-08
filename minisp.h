@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MSP_VERSION "0.0-r41-dirty"
+#define MSP_VERSION "0.0-r42-dirty"
 
 typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 
@@ -48,7 +48,7 @@ typedef struct {
 
 typedef struct { // training data
 	int32_t cid;
-	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | neg TODO: flip neg to pos
+	uint64_t x; // pos<<3 | rev<<2 | acceptor<<1 | pos
 	uint8_t *seq;
 } msp_tdata1_t;
 
