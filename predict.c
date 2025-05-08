@@ -154,7 +154,7 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 		}
 		for (i = 0; i < u.n; ++i) {
 			int32_t b = u.a[i].f >= 0.0f? (int32_t)(u.a[i].f / step) : 0;
-			assert(b < n_bin);
+			if (b >= n_bin) b = n_bin - 1;
 			e->bin[b].mt++;
 			if (u.a[i].x&1) e->bin[b].mp++;
 		}
