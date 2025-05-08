@@ -5,41 +5,35 @@
 #include "msppriv.h"
 #include "ketopt.h"
 
-static kann_t *msp_model_gen(int n_out, int len, int n_layer, int k_size, int n_flt, int n_fc, float dropout)
+static kann_t *msp_model_gen(int n_out, int len, int k_size, int n_flt, int n_fc, float dropout)
 {
 	kad_node_t *t;
-	int i;
 	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
-	for (i = 0; i < n_layer; ++i) {
-		t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
-		if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
-		t = kad_max1d(t, 3, 3, 0);
-	}
-	t = kad_relu(kann_layer_dense(t, n_fc));
+	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
+	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
+	t = kad_max1d(t, 3, 3, 0);
 	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
 }
 
-static kann_t *msp_model_gen2(int n_out, int len, int n_layer, int k_size, int n_flt, int n_fc, float dropout)
+static kann_t *msp_model_gen2(int n_out, int len, int k_size, int n_flt, int n_fc, float dropout)
 {
 	kad_node_t *t, *s[3];
-	int i, k, len_end = len / 4;
+	int k, len_end = (int)(len * .4);
 	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
 	s[0] = kad_slice(t, 2, 0, len_end);
 	s[1] = kad_slice(t, 2, len_end, len - len_end);
 	s[2] = kad_slice(t, 2, len - len_end, len);
-	for (i = 0; i < n_layer; ++i) {
-		for (k = 0; k < 3; ++k) {
-			s[k] = kad_relu(kann_layer_conv1d(s[k], n_flt, k_size, 1, 0));
-			if (dropout > 0.0f) s[k] = kann_layer_dropout(s[k], dropout);
-			s[k] = kad_max1d(s[k], 3, 3, 0);
-		}
+	for (k = 0; k < 3; ++k)
+		s[k] = kad_relu(kann_layer_conv1d(s[k], n_flt, k_size, 1, 0));
+	for (k = 0; k < 3; ++k) {
+		s[k] = kad_relu(kann_layer_conv1d(s[k], n_flt, k_size, 1, 0));
+		if (dropout > 0.0f) s[k] = kann_layer_dropout(s[k], dropout);
+		s[k] = kad_max1d(s[k], 3, 3, 0);
 	}
 	t = kad_concat(2, 3, s[0], s[1], s[2]);
-	t = kad_relu(kann_layer_dense(t, n_fc));
-	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	t = kad_relu(kann_layer_dense(t, n_fc));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
@@ -94,18 +88,17 @@ static void msp_fdata_destroy(msp_fdata_t *f)
 int main_train0(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int c, n_layer = 2, k_size = 5, n_flt = 32, n_fc = 64, max_epoch = 100, mb_sz = 64, n_thread = 1;
+	int c, k_size = 5, n_flt = 32, n_fc = 64, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10, seed = 11, use_3piece = 0, print_model = 0;
-	float lr = 0.001f, dropout = 0.3f;
+	float lr = 0.001f, dropout = 0.4f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:l:f:m:b:r:d:s:3i:o:p", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:b:r:d:s:3i:o:p", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
-		else if (c == 'l') n_layer = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
 		else if (c == 'm') max_epoch = atoi(o.arg);
 		else if (c == 'b') mb_sz = atoi(o.arg);
@@ -121,7 +114,6 @@ int main_train0(int argc, char *argv[])
 		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Model construction:\n");
-		fprintf(stderr, "    -l INT     number of 1d CNN layers [%d]\n", n_layer);
 		fprintf(stderr, "    -k INT     kernel size [%d]\n", k_size);
 		fprintf(stderr, "    -f INT     number of filters [%d]\n", n_flt);
 		fprintf(stderr, "    -d FLOAT   dropout [%g]\n", dropout);
@@ -153,8 +145,8 @@ int main_train0(int argc, char *argv[])
 	msp_sdata_destroy(d);
 
 	if (fn_in) ann = kann_load(fn_in);
-	else if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
-	else ann = msp_model_gen(f->n_label, f->len, n_layer, k_size, n_flt, n_fc, dropout);
+	else if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
+	else ann = msp_model_gen(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
 	assert(ann);
 
 	if (print_model) {
