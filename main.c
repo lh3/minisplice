@@ -4,8 +4,6 @@
 #include "msppriv.h"
 #include "ketopt.h"
 
-#define MSP_VERSION "0.0-dirty"
-
 int main_bed2bed(int argc, char *argv[]);
 int main_gentrain(int argc, char *argv[]);
 int main_train0(int argc, char *argv[]);
