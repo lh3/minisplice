@@ -127,25 +127,41 @@ class Transcript {
 	}
 }
 
-function g2b_print(gene, long_only)
+function g2b_print(gene, longest)
 {
-	for (let i = 0; i < gene.length; ++i)
-		print(gene[i].row().join("\t"));
+	if (gene.length == 0) return;
+	if (longest) {
+		let max = 0, max_i = -1;
+		for (let i = 0; i < gene.length; ++i) {
+			let len = 0, t = gene[i];
+			for (let j = 0; j < t.exon.length; ++j)
+				len += t.exon[j].en - t.exon[j].st;
+			if (max < len) max = len, max_i = i;
+		}
+		print(gene[max_i].row().join("\t"));
+	} else {
+		for (let i = 0; i < gene.length; ++i)
+			print(gene[i].row().join("\t"));
+	}
 }
 
 function g2b_main(args)
 {
-	let fn_ucsc_fai = null, ens_canon_only = false;
-	for (const o of getopt(args, "u:e")) {
+	let fn_ucsc_fai = null, ens_canon_only = false, longest = false, protein_only = false;
+	for (const o of getopt(args, "u:elp")) {
 		if (o.opt == '-u') fn_ucsc_fai = o.arg;
+		else if (o.opt == '-l') longest = true;
 		else if (o.opt == '-e') ens_canon_only = true;
+		else if (o.opt == '-p') protein_only = true;
 	}
 
 	if (args.length == 0) {
 		print("Usage: gff2bed.js [options] <in.gff>");
 		print("Options:");
-		print("  -u FILE  hg38.fa.fai for chr name conversion");
-		print("  -e       only show transcript tagged with 'Ensembl_canonical'");
+		print("  -l         choose the longest transcript for each gene");
+		print("  -e         only include transcripts tagged with 'Ensembl_canonical'");
+		print("  -p         only include 'protein_coding' transcripts");
+		print("  -u FILE    hg38.fa.fai for chr name conversion");
 		return;
 	}
 
@@ -186,7 +202,7 @@ function g2b_main(args)
 		// collect meta annotation
 		const st = parseInt(t[3]) - 1;
 		const en = parseInt(t[4]);
-		let m, tid = null, gid = null, type = null, gname = null, biotype = null, ens_canonical = false;
+		let m, tid = null, gid = null, type = "", gname = null, biotype = "", ens_canonical = false;
 		while ((m = re_gff.exec(t[8])) != null) {
 			const key = m[1], val = m[3]? m[3] : m[4];
 			if (key == "transcript_id") tid = val;
@@ -201,11 +217,12 @@ function g2b_main(args)
 		if (gname == null) gname = gid? gid : "*"; // infer gene name
 		if (gid == null) gid = gname; // if gene_id missing, use gene name to identify a gene
 		if (type == "" && biotype != "") type = biotype; // infer transcript type
+		if (protein_only && type != "" && type != "protein_coding") continue;
 
 		// finish transcript or gene
 		if (gene.length == 0 || gene[gene.length - 1].tid != tid) { // changing transcript
 			if (gene.length > 0 && gene[gene.length - 1].gid != gid) { // changing gene
-				g2b_print(gene);
+				g2b_print(gene, longest);
 				gene = [];
 			}
 			gene.push(new Transcript(tid, type, ctg, t[6], gid, gname));
@@ -220,7 +237,7 @@ function g2b_main(args)
 			tr.exon.push({ st:st, en:en });
 		}
 	}
-	g2b_print(gene);
+	g2b_print(gene, longest);
 }
 
 g2b_main(arguments);
