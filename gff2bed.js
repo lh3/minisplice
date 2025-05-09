@@ -217,7 +217,7 @@ function g2b_main(args)
 		if (gname == null) gname = gid? gid : "*"; // infer gene name
 		if (gid == null) gid = gname; // if gene_id missing, use gene name to identify a gene
 		if (type == "" && biotype != "") type = biotype; // infer transcript type
-		if (protein_only && type != "" && type != "protein_coding") continue;
+		if (protein_only && type != "" && type != "protein_coding" && type != "mRNA") continue;
 
 		// finish transcript or gene
 		if (gene.length == 0 || gene[gene.length - 1].tid != tid) { // changing transcript
