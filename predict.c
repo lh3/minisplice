@@ -168,7 +168,7 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0; // 0 for donor and 1 for acceptor
+	int32_t c, n_thread = 1, mb_sz = 128, type = -1;
 	msp_file_t *fx;
 	kann_t *ann;
 	char *fn_bed = 0;
@@ -183,15 +183,21 @@ int main_predict(int argc, char *argv[])
 		else if (c == 's') step = atof(o.arg);
 	}
 	if (argc - o.ind < 2) {
-		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>\n");
+		fprintf(stderr, "Usage: minisplice predict <-d|-a> [options] <in.kan> <in.fastx>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Prediction:\n");
-		fprintf(stderr, "    -a          acceptor model (donor model by default)\n");
+		fprintf(stderr, "    -d          donor model\n");
+		fprintf(stderr, "    -a          acceptor model\n");
 		fprintf(stderr, "    -t INT      number of threads [%d]\n", n_thread);
 		fprintf(stderr, "    -b INT      minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "  Evaluation:\n");
 		fprintf(stderr, "    -e FILE     annotated splice sites in BED12 []\n");
 		fprintf(stderr, "    -s FLOAT    step [%g]\n", step);
+		return 1;
+	}
+
+	if (type < 0) {
+		fprintf(stderr, "ERROR: -d or -a is required\n");
 		return 1;
 	}
 
