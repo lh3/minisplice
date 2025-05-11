@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <math.h>
 #include "kann.h"
 #include "msppriv.h"
 #include "ketopt.h"
@@ -110,11 +111,14 @@ void msp_eval_update(msp_eval_t *e)
 {
 	int32_t b;
 	int64_t tot_n = 0, tot_p = 0;
+	double q;
 	e->tot_t = e->tot_p = 0;
 	for (b = e->n_bin - 1; b >= 0; --b) {
 		e->tot_t += e->bin[b].mt;
 		e->tot_p += e->bin[b].mp;
+		e->bin[b].spsc = (e->bin[b].mp + 1e-3) / (e->bin[b].mt + 1e-3);
 	}
+	q = (e->tot_p + 1e-3) / (e->tot_t + 1e-3);
 	for (b = e->n_bin - 1; b >= 0; --b) {
 		tot_p += e->bin[b].mp;
 		tot_n += e->bin[b].mt - e->bin[b].mp;
@@ -122,7 +126,11 @@ void msp_eval_update(msp_eval_t *e)
 		e->bin[b].fn = e->tot_p - tot_p;
 		e->bin[b].fp = tot_n;
 		e->bin[b].tn = e->tot_t - e->tot_p - tot_n;
+		e->bin[b].spsc = 2. * log(e->bin[b].spsc / q) / log(2.);
 	}
+	for (b = e->n_bin - 2; b >= 0; --b)
+		if (e->bin[b].spsc > e->bin[b+1].spsc)
+			e->bin[b].spsc = e->bin[b+1].spsc;
 }
 
 msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t mb_sz, int32_t type, float step)
@@ -172,7 +180,7 @@ int main_predict(int argc, char *argv[])
 	msp_file_t *fx;
 	kann_t *ann;
 	char *fn_bed = 0;
-	float step = 0.05f;
+	float step = 0.02f;
 
 	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:s:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
@@ -227,8 +235,8 @@ int main_predict(int argc, char *argv[])
 		fprintf(fp, "NB\t%d\n", e->n_bin);
 		for (i = e->n_bin - 1; i > 0; --i) {
 			const msp_evalbin_t *b = &e->bin[i];
-			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4g\t%.4g\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
-				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn));
+			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4g\t%.4g\t%.2g\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
+				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
 		}
 		free(e);
 	} else {

@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MSP_VERSION "0.0-r49-dirty"
+#define MSP_VERSION "0.0-r50-dirty"
 
 typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 
@@ -84,6 +84,7 @@ typedef struct {
 typedef struct { // accuracy statistics in each bin
 	int64_t mt, mp; // marginal total, marginal positives
 	int64_t tp, fp, tn, fn; // derived from mt and mp
+	double spsc;
 } msp_evalbin_t;
 
 typedef struct {
