@@ -227,7 +227,7 @@ int main_predict(int argc, char *argv[])
 		fprintf(fp, "CC\tTP  #posSites\n");
 		fprintf(fp, "CC\tST  step\n");
 		fprintf(fp, "CC\tNB  #bins\n");
-		fprintf(fp, "CC\tBN  bin  all  pos  TP  FP  TN  FN  FPR  SN\n");
+		fprintf(fp, "CC\tBN  bin  all  pos  TP  FP  TN  FN  FPR  SN  score\n");
 		fprintf(fp, "//\n");
 		fprintf(fp, "TT\t%ld\n", (long)e->tot_t);
 		fprintf(fp, "TP\t%ld\n", (long)e->tot_p);
@@ -235,7 +235,7 @@ int main_predict(int argc, char *argv[])
 		fprintf(fp, "NB\t%d\n", e->n_bin);
 		for (i = e->n_bin - 1; i > 0; --i) {
 			const msp_evalbin_t *b = &e->bin[i];
-			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4g\t%.4g\t%.2g\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
+			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4f\t%.4f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
 				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
 		}
 		free(e);
