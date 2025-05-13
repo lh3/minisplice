@@ -85,7 +85,7 @@ static void msp_fdata_destroy(msp_fdata_t *f)
 	free(f);
 }
 
-int main_train0(int argc, char *argv[])
+int main_train(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
 	int c, k_size = 5, n_flt = 32, n_fc = 64, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
@@ -112,7 +112,7 @@ int main_train0(int argc, char *argv[])
 		else if (c == 'e') min_epoch = atoi(o.arg);
 	}
 	if (argc - o.ind < 1) {
-		fprintf(stderr, "Usage: minisplice train0 [options] <in.data>\n");
+		fprintf(stderr, "Usage: minisplice train [options] <in.data>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Model construction:\n");
 		fprintf(stderr, "    -k INT     kernel size [%d]\n", k_size);
