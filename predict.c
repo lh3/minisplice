@@ -227,6 +227,26 @@ msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, fl
 	return e;
 }
 
+void msp_eval_print(FILE *fp, const msp_eval_t *e)
+{
+	int32_t i;
+	fprintf(fp, "CC\tTT  #allSites\n");
+	fprintf(fp, "CC\tTP  #posSites\n");
+	fprintf(fp, "CC\tST  step\n");
+	fprintf(fp, "CC\tNB  #bins\n");
+	fprintf(fp, "CC\tBN  bin  all  pos  TP  FP  TN  FN  FPR  SN  score\n");
+	fprintf(fp, "//\n");
+	fprintf(fp, "TT\t%ld\n", (long)e->tot_t);
+	fprintf(fp, "TP\t%ld\n", (long)e->tot_p);
+	fprintf(fp, "ST\t%g\n", e->step);
+	fprintf(fp, "NB\t%d\n", e->n_bin);
+	for (i = e->n_bin - 1; i > 0; --i) {
+		const msp_evalbin_t *b = &e->bin[i];
+		fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4f\t%.4f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
+				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
+	}
+}
+
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
@@ -250,13 +270,13 @@ int main_predict(int argc, char *argv[])
 		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Prediction:\n");
-		fprintf(stderr, "    -d          donor model\n");
-		fprintf(stderr, "    -a          acceptor model\n");
+		fprintf(stderr, "    -d          donor only\n");
+		fprintf(stderr, "    -a          acceptor only\n");
 		fprintf(stderr, "    -t INT      number of threads [%d]\n", n_thread);
 		fprintf(stderr, "    -m INT      minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "  Evaluation:\n");
 		fprintf(stderr, "    -b FILE     annotated splice sites in BED12 []\n");
-		fprintf(stderr, "    -s FLOAT    step [%g]\n", step);
+		fprintf(stderr, "    -s FLOAT    score bin size [%g]\n", step);
 		fprintf(stderr, "    -r          input formatted as training data\n");
 		return 1;
 	}
@@ -270,8 +290,6 @@ int main_predict(int argc, char *argv[])
 	else fx = msp_fastx_open(argv[o.ind+1]);
 
 	if (fn_bed || train_fmt) { // for evaluation/calibration given fastx
-		int32_t i;
-		FILE *fp = stdout;
 		msp_eval_t *e;
 		if (train_fmt) {
 			e = msp_eval_sdata(ann, sd, mb_sz, step);
@@ -283,21 +301,7 @@ int main_predict(int argc, char *argv[])
 			e = msp_eval(ann, fx, bed, mb_sz, type, step);
 			msp_bed_destroy(bed);
 		}
-		fprintf(fp, "CC\tTT  #allSites\n");
-		fprintf(fp, "CC\tTP  #posSites\n");
-		fprintf(fp, "CC\tST  step\n");
-		fprintf(fp, "CC\tNB  #bins\n");
-		fprintf(fp, "CC\tBN  bin  all  pos  TP  FP  TN  FN  FPR  SN  score\n");
-		fprintf(fp, "//\n");
-		fprintf(fp, "TT\t%ld\n", (long)e->tot_t);
-		fprintf(fp, "TP\t%ld\n", (long)e->tot_p);
-		fprintf(fp, "ST\t%g\n", step);
-		fprintf(fp, "NB\t%d\n", e->n_bin);
-		for (i = e->n_bin - 1; i > 0; --i) {
-			const msp_evalbin_t *b = &e->bin[i];
-			fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4f\t%.4f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
-				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
-		}
+		msp_eval_print(stdout, e);
 		free(e);
 	} else { // for prediction
 		msp_predict_print(ann, fx, mb_sz, type);
