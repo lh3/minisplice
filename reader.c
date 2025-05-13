@@ -238,23 +238,34 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 	d = MSP_CALLOC(msp_sdata_t, 1);
 	while ((ret = ks_getuntil(ks, KS_SEP_LINE, &str, 0)) >= 0) {
 		char *p, *q, *seq = 0;
-		int32_t i, j, len = -1;
-		uint32_t label;
+		int32_t i, j, len = -1, type = -1;
+		int32_t label = -1;
 		for (p = q = str.s, i = 0;; ++p) {
 			if (*p == 0 || *p == '\t' || *p == ' ') {
 				int c = *p;
 				*p = 0;
-				if (i == 0) label = atol(q);
-				else if (i == 1) seq = q, len = p - q;
+				if (i == 0) {
+					if (*q >= '0' && *q <= '9')
+						type = 0, label = atol(q); // 2-column
+					else type = 1; // 6-column
+				} else if (type == 1 && i == 4) {
+					label = atol(q);
+				} else if ((type == 0 && i == 1) || (type == 1 && i == 5)) {
+					seq = q, len = p - q;
+				}
 				++i, q = p + 1;
-				if (c == 0 || i >= 2) break;
+				if (c == 0) break;
 			}
 		}
-		if (i >= 2 && seq) {
+		if (seq && label >= 0) {
 			msp_sdata1_t *r;
 			d->n_label = d->n_label > label + 1? d->n_label : label + 1;
 			if (d->len <= 0) d->len = len;
-			else if (d->len != len) continue; // TODO: give a warning!
+			else if (d->len != len) {
+				if (msp_verbose >= 2)
+					fprintf(stderr, "[W::%s] training data contain sequences of different lengths: %d != %d\n", __func__, d->len, len);
+				continue;
+			}
 			MSP_GROW(msp_sdata1_t, d->a, d->n, d->m);
 			r = &d->a[d->n++];
 			r->label = label;
