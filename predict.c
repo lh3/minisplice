@@ -113,6 +113,15 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, int32_t mb_sz, int32_t type)
 	free(out.s); free(t.a);
 }
 
+msp_eval_t *msp_eval_init(float step)
+{
+	int32_t n_bin = (int32_t)((1.0 + step - 1e-3) / step);
+	msp_eval_t *e;
+	e = (msp_eval_t*)calloc(1, sizeof(msp_eval_t) + n_bin * sizeof(msp_evalbin_t));
+	e->n_bin = n_bin, e->step = step;
+	return e;
+}
+
 void msp_eval_update(msp_eval_t *e)
 {
 	int32_t b;
@@ -151,13 +160,11 @@ static void msp_mark_truth(msp_pdata_t *u, const msp64a_t *pt)
 
 msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t mb_sz, int32_t type, float step)
 {
-	int32_t len, n_bin;
+	int32_t len;
 	const char *name, *seq;
 	msp_pdata_t u = {0,0,0};
 	msp_eval_t *e;
-	n_bin = (int32_t)((1.0 + step - 1e-3) / step);
-	e = (msp_eval_t*)calloc(1, sizeof(msp_eval_t) + n_bin * sizeof(msp_evalbin_t));
-	e->n_bin = n_bin, e->step = step;
+	e = msp_eval_init(step);
 	while ((len = msp_fastx_read(fx, &name, &seq)) >= 0) {
 		int32_t cid;
 		int64_t i;
@@ -173,7 +180,7 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 
 		for (i = 0; i < u.n; ++i) {
 			int32_t b = u.a[i].f >= 0.0f? (int32_t)(u.a[i].f / step) : 0;
-			if (b >= n_bin) b = n_bin - 1;
+			if (b >= e->n_bin) b = e->n_bin - 1;
 			e->bin[b].mt++;
 			if (u.a[i].x&1) e->bin[b].mp++;
 		}
@@ -184,34 +191,73 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 	return e;
 }
 
+msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, float step)
+{
+	int32_t n_in, n_out, i_out;
+	int64_t i;
+	float *x1;
+	msp_eval_t *e;
+
+	assert(sd->n_label == 2);
+	e = msp_eval_init(step);
+	kann_switch(ann, 0);
+	i_out = kann_find(ann, KANN_F_OUT, 0);
+	n_in = kann_dim_in(ann);
+	n_out = kann_dim_out(ann);
+	x1 = MSP_CALLOC(float, mb_sz * n_in);
+	kann_feed_bind(ann, KANN_F_IN, 0, &x1);
+	for (i = 0; i < sd->n; i += mb_sz) {
+		int32_t j, k = mb_sz < sd->n - i? mb_sz : sd->n - i;
+		const float *y1;
+		for (j = 0; j < k; ++j)
+			msp_seq2vec(sd->len, sd->a[i+j].seq, &x1[j * n_in]);
+		kann_set_batch_size(ann, k);
+		kann_eval_out(ann);
+		y1 = ann->v[i_out]->x;
+		for (j = 0; j < k; ++j) {
+			double f = y1[j * n_out + 1];
+			int32_t b = (int32_t)(f / step);
+			if (b >= e->n_bin) b = e->n_bin - 1;
+			e->bin[b].mt++;
+			if (sd->a[i+j].label) e->bin[b].mp++;
+		}
+	}
+	free(x1);
+	msp_eval_update(e);
+	return e;
+}
+
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0;
-	msp_file_t *fx;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0;
 	kann_t *ann;
 	char *fn_bed = 0;
 	float step = 0.02f;
+	msp_file_t *fx = 0;
+	msp_sdata_t *sd = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:s:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:r", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
-		else if (c == 'b') mb_sz = atoi(o.arg);
+		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'd') type |= 1;
 		else if (c == 'a') type |= 2;
-		else if (c == 'e') fn_bed = o.arg;
+		else if (c == 'e' || c == 'b') fn_bed = o.arg;
 		else if (c == 's') step = atof(o.arg);
+		else if (c == 'r') train_fmt = 1;
 	}
 	if (argc - o.ind < 2) {
-		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>\n");
+		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Prediction:\n");
 		fprintf(stderr, "    -d          donor model\n");
 		fprintf(stderr, "    -a          acceptor model\n");
 		fprintf(stderr, "    -t INT      number of threads [%d]\n", n_thread);
-		fprintf(stderr, "    -b INT      minibatch size [%d]\n", mb_sz);
+		fprintf(stderr, "    -m INT      minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "  Evaluation:\n");
-		fprintf(stderr, "    -e FILE     annotated splice sites in BED12 []\n");
+		fprintf(stderr, "    -b FILE     annotated splice sites in BED12 []\n");
 		fprintf(stderr, "    -s FLOAT    step [%g]\n", step);
+		fprintf(stderr, "    -r          input formatted as training data\n");
 		return 1;
 	}
 
@@ -219,18 +265,24 @@ int main_predict(int argc, char *argv[])
 
 	ann = kann_load(argv[o.ind]);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
-	fx = msp_fastx_open(argv[o.ind+1]);
-	assert(ann && fx);
-	if (fn_bed) {
+	assert(ann);
+	if (train_fmt) sd = msp_sdata_read(argv[o.ind+1]);
+	else fx = msp_fastx_open(argv[o.ind+1]);
+
+	if (fn_bed || train_fmt) { // for evaluation/calibration given fastx
 		int32_t i;
 		FILE *fp = stdout;
-		msp_bed_t *bed;
 		msp_eval_t *e;
-		bed = msp_bed_read(fn_bed);
-		msp_bed_idxctg(bed);
-		assert(bed);
-		e = msp_eval(ann, fx, bed, mb_sz, type, step);
-		msp_bed_destroy(bed);
+		if (train_fmt) {
+			e = msp_eval_sdata(ann, sd, mb_sz, step);
+		} else {
+			msp_bed_t *bed;
+			bed = msp_bed_read(fn_bed);
+			msp_bed_idxctg(bed);
+			assert(bed);
+			e = msp_eval(ann, fx, bed, mb_sz, type, step);
+			msp_bed_destroy(bed);
+		}
 		fprintf(fp, "CC\tTT  #allSites\n");
 		fprintf(fp, "CC\tTP  #posSites\n");
 		fprintf(fp, "CC\tST  step\n");
@@ -247,11 +299,12 @@ int main_predict(int argc, char *argv[])
 				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
 		}
 		free(e);
-	} else {
+	} else { // for prediction
 		msp_predict_print(ann, fx, mb_sz, type);
 	}
 
-	msp_file_close(fx);
+	if (fx) msp_file_close(fx);
+	if (sd) msp_sdata_destroy(sd);
 	kann_delete(ann);
 	return 0;
 }

@@ -96,12 +96,12 @@ int main_train(int argc, char *argv[])
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:b:r:d:s:3i:o:pe:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:3i:o:p", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
-		else if (c == 'm') max_epoch = atoi(o.arg);
-		else if (c == 'b') mb_sz = atoi(o.arg);
+		else if (c == 'E') max_epoch = atoi(o.arg);
+		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'r') lr = atof(o.arg);
 		else if (c == 'd') dropout = atof(o.arg);
 		else if (c == 's') seed = atoi(o.arg);
@@ -122,8 +122,8 @@ int main_train(int argc, char *argv[])
 		fprintf(stderr, "  Model training:\n");
 		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
 		fprintf(stderr, "    -e INT     min number of epoches [%d]\n", min_epoch);
-		fprintf(stderr, "    -m INT     max number of epoches [%d]\n", max_epoch);
-		fprintf(stderr, "    -b INT     minibatch size [%d]\n", mb_sz);
+		fprintf(stderr, "    -E INT     max number of epoches [%d]\n", max_epoch);
+		fprintf(stderr, "    -m INT     minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "    -s INT     random seed [%d]\n", seed);
 		fprintf(stderr, "    -t INT     number of threads [%d]\n", n_thread);
 		fprintf(stderr, "  Model I/O:\n");
