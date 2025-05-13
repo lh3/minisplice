@@ -274,6 +274,7 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 				r->seq[j] = msp_nt6_table[(uint8_t)seq[j]] - 1;
 		}
 	}
+	free(str.s);
 	return d;
 }
 
@@ -283,4 +284,53 @@ void msp_sdata_destroy(msp_sdata_t *d)
 	for (i = 0; i < d->n; ++i)
 		free(d->a[i].seq);
 	free(d->a); free(d);
+}
+
+/***************
+ * eval reader *
+ ***************/
+
+msp_eval_t *msp_eval_read(const char *fn)
+{
+	msp_file_t *fp;
+	msp_eval_t *e = 0;
+	kstream_t *ks;
+	kstring_t str = {0,0,0};
+	int32_t ret;
+
+	fp = msp_file_open_by_line(fn);
+	if (fp == 0) return 0;
+	ks = (kstream_t*)fp->fp;
+	while ((ret = ks_getuntil(ks, KS_SEP_LINE, &str, 0)) >= 0) {
+		char *p, *q;
+		int32_t i, type = 0, b = -1;
+		for (p = q = str.s, i = 0;; ++p) {
+			if (*p == 0 || *p == '\t' || *p == ' ') {
+				int c = *p;
+				*p = 0;
+				if (i == 0) {
+					if (strcmp(q, "ST") == 0) type = 1;
+					else if (strcmp(q, "BN") == 0) type = 2;
+				} else if (type == 1 && i == 1) {
+					double step;
+					step = atof(q);
+					e = msp_eval_init(step);
+				} else if (type == 2 && i == 1) {
+					assert(e);
+					b = atoi(q);
+				} else if (type == 2 && i == 2) {
+					assert(b > 0 && b < e->n_bin);
+					e->bin[b].mt = atol(q);
+				} else if (type == 2 && i == 3) {
+					e->bin[b].mp = atol(q);
+				}
+				++i, q = p + 1;
+				if (c == 0) break;
+			}
+		}
+	}
+	free(str.s);
+	msp_file_close(fp);
+	msp_eval_update(e);
+	return e;
 }

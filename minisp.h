@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MSP_VERSION "0.0-r56-dirty"
+#define MSP_VERSION "0.0-r57-dirty"
 
 typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 
@@ -84,7 +84,7 @@ typedef struct {
 typedef struct { // accuracy statistics in each bin
 	int64_t mt, mp; // marginal total, marginal positives
 	int64_t tp, fp, tn, fn; // derived from mt and mp
-	double spsc;
+	double spsc; // also derived
 } msp_evalbin_t;
 
 typedef struct {
@@ -102,6 +102,7 @@ extern "C" {
 
 void msp_file_close(msp_file_t *f);
 
+// training data
 msp_tdata_t *msp_gen_train(const msp_bed_t *bed, msp_file_t *fx, int32_t ext, double frac_pos);
 void msp_tdata_dump(FILE *fp, const msp_bed_t *bed, const msp_tdata_t *d);
 void msp_tdata_destroy(msp_tdata_t *d);
@@ -119,6 +120,11 @@ void msp_bed_sort(msp_bed_t *bed);
 void msp_bed_idxctg(msp_bed_t *bed);
 int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_);
 void msp_bed_destroy(msp_bed_t *bed);
+
+// calibration data
+msp_eval_t *msp_eval_init(float step);
+msp_eval_t *msp_eval_read(const char *fn);
+void msp_eval_update(msp_eval_t *e);
 
 // strmap
 msp_strmap_t *msp_strmap_init(void);

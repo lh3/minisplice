@@ -93,7 +93,7 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 	free(mb2i); free(x1); free(s);
 }
 
-void msp_predict_print(kann_t *ann, msp_file_t *fx, int32_t mb_sz, int32_t type)
+void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t mb_sz, int32_t type)
 {
 	int32_t len;
 	const char *name, *seq;
@@ -240,9 +240,9 @@ void msp_eval_print(FILE *fp, const msp_eval_t *e)
 	fprintf(fp, "TP\t%ld\n", (long)e->tot_p);
 	fprintf(fp, "ST\t%g\n", e->step);
 	fprintf(fp, "NB\t%d\n", e->n_bin);
-	for (i = e->n_bin - 1; i > 0; --i) {
+	for (i = e->n_bin - 1; i >= 0; --i) {
 		const msp_evalbin_t *b = &e->bin[i];
-		fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.4f\t%.4f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
+		fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.6f\t%.6f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
 				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
 	}
 }
@@ -252,12 +252,12 @@ int main_predict(int argc, char *argv[])
 	ketopt_t o = KETOPT_INIT;
 	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0;
 	kann_t *ann;
-	char *fn_bed = 0;
+	char *fn_bed = 0, *fn_cali = 0;
 	float step = 0.02f;
 	msp_file_t *fx = 0;
 	msp_sdata_t *sd = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:r", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'd') type |= 1;
@@ -265,16 +265,18 @@ int main_predict(int argc, char *argv[])
 		else if (c == 'e' || c == 'b') fn_bed = o.arg;
 		else if (c == 's') step = atof(o.arg);
 		else if (c == 'r') train_fmt = 1;
+		else if (c == 'c') fn_cali = o.arg;
 	}
 	if (argc - o.ind < 2) {
 		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Prediction:\n");
+		fprintf(stderr, "    -c FILE     calibration data []\n");
 		fprintf(stderr, "    -d          donor only\n");
 		fprintf(stderr, "    -a          acceptor only\n");
 		fprintf(stderr, "    -t INT      number of threads [%d]\n", n_thread);
 		fprintf(stderr, "    -m INT      minibatch size [%d]\n", mb_sz);
-		fprintf(stderr, "  Evaluation:\n");
+		fprintf(stderr, "  Calibration:\n");
 		fprintf(stderr, "    -b FILE     annotated splice sites in BED12 []\n");
 		fprintf(stderr, "    -s FLOAT    score bin size [%g]\n", step);
 		fprintf(stderr, "    -r          input formatted as training data\n");
@@ -304,7 +306,10 @@ int main_predict(int argc, char *argv[])
 		msp_eval_print(stdout, e);
 		free(e);
 	} else { // for prediction
-		msp_predict_print(ann, fx, mb_sz, type);
+		msp_eval_t *e = 0;
+		if (fn_cali) e = msp_eval_read(fn_cali);
+		msp_predict_print(ann, fx, e, mb_sz, type);
+		free(e);
 	}
 
 	if (fx) msp_file_close(fx);
