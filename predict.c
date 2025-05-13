@@ -19,20 +19,26 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 
 	for (i = 0, l = k = 0, x = 0; i < len; ++i) {
 		int c = seq[i];
-		uint64_t z = (uint64_t)-1;
 		if (c < 4) {
 			x = (x << 2 | c) & 0xf;
 			if (++l >= 2) {
-				if (type == 0) { // donor
+				if (type & 1) { // donor
+					uint64_t z = (uint64_t)-1;
 					if (x == (2<<2|3)) z = (i-1)<<3 | 0<<2 | 0<<1; // GT
 					else if (x == (0<<2|1)) z = (i+1)<<3 | 1<<2 | 0<<1; // AC
-				} else { // acceptor
+					if (z != (uint64_t)-1) {
+						MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
+						t->a[t->n++].x = z;
+					}
+				}
+				if (type & 2) { // acceptor
+					uint64_t z = (uint64_t)-1;
 					if (x == (0<<2|2)) z = (i+1)<<3 | 0<<2 | 1<<1; // AG
 					else if (x == (1<<2|3)) z = (i-1)<<3 | 1<<2 | 1<<1; // CT
-				}
-				if (z != (uint64_t)-1 && (z>>1&1) == type) {
-					MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
-					t->a[t->n++].x = z;
+					if (z != (uint64_t)-1) {
+						MSP_GROW(msp_pdata1_t, t->a, t->n, t->m);
+						t->a[t->n++].x = z;
+					}
 				}
 			}
 		} else l = 0, x = 0;
@@ -133,6 +139,16 @@ void msp_eval_update(msp_eval_t *e)
 			e->bin[b].spsc = e->bin[b+1].spsc;
 }
 
+static void msp_mark_truth(msp_pdata_t *u, const msp64a_t *pt)
+{
+	int64_t i = 0, j = 0;
+	while (i < u->n && j < pt->n) {
+		if (u->a[i].x>>1 == pt->a[j]>>1) u->a[i].x |= 1, ++i, ++j;
+		else if (u->a[i].x>>1 < pt->a[j]>>1) ++i;
+		else ++j;
+	}
+}
+
 msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t mb_sz, int32_t type, float step)
 {
 	int32_t len, n_bin;
@@ -144,22 +160,17 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 	e->n_bin = n_bin, e->step = step;
 	while ((len = msp_fastx_read(fx, &name, &seq)) >= 0) {
 		int32_t cid;
-		int64_t i, j;
-		msp64a_t td = {0,0,0}, ta = {0,0,0}, *pt;
+		int64_t i;
+		msp64a_t td = {0,0,0}, ta = {0,0,0};
 
 		cid = msp_strmap_get(bed->h, name);
 		if (cid < 0) continue;
 		msp_gen_pos(&td, &ta, bed, cid, len, (uint8_t*)seq);
-		pt = type == 0? &td : &ta;
 		u.n = 0;
 		msp_predict1(&u, ann, len, (uint8_t*)seq, mb_sz, type);
+		if (type & 1) msp_mark_truth(&u, &td);
+		if (type & 2) msp_mark_truth(&u, &ta);
 
-		i = j = 0;
-		while (i < u.n && j < pt->n) {
-			if (u.a[i].x>>1 == pt->a[j]>>1) u.a[i].x |= 1, ++i, ++j;
-			else if (u.a[i].x>>1 < pt->a[j]>>1) ++i;
-			else ++j;
-		}
 		for (i = 0; i < u.n; ++i) {
 			int32_t b = u.a[i].f >= 0.0f? (int32_t)(u.a[i].f / step) : 0;
 			if (b >= n_bin) b = n_bin - 1;
@@ -176,7 +187,7 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = -1;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0;
 	msp_file_t *fx;
 	kann_t *ann;
 	char *fn_bed = 0;
@@ -185,13 +196,13 @@ int main_predict(int argc, char *argv[])
 	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:s:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'b') mb_sz = atoi(o.arg);
-		else if (c == 'a') type = 1;
-		else if (c == 'd') type = 0;
+		else if (c == 'd') type |= 1;
+		else if (c == 'a') type |= 2;
 		else if (c == 'e') fn_bed = o.arg;
 		else if (c == 's') step = atof(o.arg);
 	}
 	if (argc - o.ind < 2) {
-		fprintf(stderr, "Usage: minisplice predict <-d|-a> [options] <in.kan> <in.fastx>\n");
+		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Prediction:\n");
 		fprintf(stderr, "    -d          donor model\n");
@@ -204,10 +215,7 @@ int main_predict(int argc, char *argv[])
 		return 1;
 	}
 
-	if (type < 0) {
-		fprintf(stderr, "ERROR: -d or -a is required\n");
-		return 1;
-	}
+	if (type == 0) type = 3;
 
 	ann = kann_load(argv[o.ind]);
 	if (n_thread > 1) kann_mt(ann, n_thread, mb_sz);
