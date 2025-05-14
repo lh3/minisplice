@@ -110,7 +110,7 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t
 				int32_t b = (int32_t)(f / e->step);
 				if (b == 0) continue;
 				spsc = (int32_t)(e->bin[b].spsc + .499);
-				if (spsc < min_score) spsc = min_score;
+				if (spsc <= min_score) continue;
 				if (spsc > max_score) spsc = max_score;
 			}
 			out.l = 0;
