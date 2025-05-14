@@ -319,7 +319,7 @@ msp_eval_t *msp_eval_read(const char *fn)
 					assert(e);
 					b = atoi(q);
 				} else if (type == 2 && i == 2) {
-					assert(b > 0 && b < e->n_bin);
+					assert(b >= 0 && b < e->n_bin);
 					e->bin[b].mt = atol(q);
 				} else if (type == 2 && i == 3) {
 					e->bin[b].mp = atol(q);

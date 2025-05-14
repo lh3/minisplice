@@ -332,7 +332,6 @@ int main_predict(int argc, char *argv[])
 	} else { // for prediction
 		msp_eval_t *e = 0;
 		if (fn_cali) e = msp_eval_read(fn_cali);
-		if (e) msp_eval_print(stderr, e);
 		msp_predict_print(ann, fx, e, min_score, max_score, mb_sz, type);
 		free(e);
 	}
