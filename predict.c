@@ -93,7 +93,7 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 	free(mb2i); free(x1); free(s);
 }
 
-void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t mb_sz, int32_t type)
+void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t min_score, int32_t max_score, int32_t mb_sz, int32_t type)
 {
 	int32_t len;
 	const char *name, *seq;
@@ -104,11 +104,27 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t
 		t.n = 0;
 		msp_predict1(&t, ann, len, (uint8_t*)seq, mb_sz, type);
 		for (i = 0; i < t.n; ++i) {
+			int32_t spsc = min_score;
+			if (e) {
+				double f = t.a[i].f >= 0.0? t.a[i].f : 0.0;
+				int32_t b = (int32_t)(f / e->step);
+				if (b == 0) continue;
+				spsc = (int32_t)(e->bin[b].spsc + .499);
+				if (spsc < min_score) spsc = min_score;
+				if (spsc > max_score) spsc = max_score;
+			}
 			out.l = 0;
 			msp_sprintf_lite(&out, "%s\t%ld\t%c\t%c\t", name, (long)(t.a[i].x>>3), "+-"[t.a[i].x>>2&1], "DA"[t.a[i].x>>1&1]);
-			fwrite(out.s, 1, out.l, stdout);
-			printf("%.4f\n", t.a[i].f);
+			if (e) {
+				msp_sprintf_lite(&out, "%d\n", spsc);
+				fwrite(out.s, 1, out.l, stdout);
+			} else {
+				fwrite(out.s, 1, out.l, stdout);
+				printf("%.4f\n", t.a[i].f);
+			}
 		}
+		if (msp_verbose >= 3)
+			fprintf(stderr, "[M::%s@%.3f*%.2f] processed sequence '%s'\n", __func__, msp_realtime(), msp_percent_cpu(), name);
 	}
 	free(out.s); free(t.a);
 }
@@ -185,6 +201,8 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 			if (u.a[i].x&1) e->bin[b].mp++;
 		}
 		free(td.a); free(ta.a);
+		if (msp_verbose >= 3)
+			fprintf(stderr, "[M::%s@%.3f*%.2f] processed sequence '%s'\n", __func__, msp_realtime(), msp_percent_cpu(), name);
 	}
 	free(u.a);
 	msp_eval_update(e);
@@ -245,19 +263,20 @@ void msp_eval_print(FILE *fp, const msp_eval_t *e)
 		fprintf(fp, "BN\t%d\t%ld\t%ld\t%ld\t%ld\t%ld\t%ld\t%.6f\t%.6f\t%.3f\n", i, (long)b->mt, (long)b->mp, (long)b->tp,
 				(long)b->fp, (long)b->tn, (long)b->fn, (double)b->tp / (b->tp + b->fn), (double)b->fp / (b->fp + b->tn), b->spsc);
 	}
+	fprintf(fp, "//\n");
 }
 
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13;
 	kann_t *ann;
 	char *fn_bed = 0, *fn_cali = 0;
 	float step = 0.02f;
 	msp_file_t *fx = 0;
 	msp_sdata_t *sd = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:l:h:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'd') type |= 1;
@@ -266,16 +285,21 @@ int main_predict(int argc, char *argv[])
 		else if (c == 's') step = atof(o.arg);
 		else if (c == 'r') train_fmt = 1;
 		else if (c == 'c') fn_cali = o.arg;
+		else if (c == 'l') min_score = atoi(o.arg);
+		else if (c == 'h') max_score = atoi(o.arg);
 	}
 	if (argc - o.ind < 2) {
 		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
 		fprintf(stderr, "Options:\n");
-		fprintf(stderr, "  Prediction:\n");
-		fprintf(stderr, "    -c FILE     calibration data []\n");
-		fprintf(stderr, "    -d          donor only\n");
-		fprintf(stderr, "    -a          acceptor only\n");
+		fprintf(stderr, "  General:\n");
 		fprintf(stderr, "    -t INT      number of threads [%d]\n", n_thread);
 		fprintf(stderr, "    -m INT      minibatch size [%d]\n", mb_sz);
+		fprintf(stderr, "    -d          donor only\n");
+		fprintf(stderr, "    -a          acceptor only\n");
+		fprintf(stderr, "  Prediction:\n");
+		fprintf(stderr, "    -c FILE     calibration data []\n");
+		fprintf(stderr, "    -l INT      min score [%d]\n", min_score);
+		fprintf(stderr, "    -h INT      max score [%d]\n", max_score);
 		fprintf(stderr, "  Calibration:\n");
 		fprintf(stderr, "    -b FILE     annotated splice sites in BED12 []\n");
 		fprintf(stderr, "    -s FLOAT    score bin size [%g]\n", step);
@@ -308,7 +332,8 @@ int main_predict(int argc, char *argv[])
 	} else { // for prediction
 		msp_eval_t *e = 0;
 		if (fn_cali) e = msp_eval_read(fn_cali);
-		msp_predict_print(ann, fx, e, mb_sz, type);
+		if (e) msp_eval_print(stderr, e);
+		msp_predict_print(ann, fx, e, min_score, max_score, mb_sz, type);
 		free(e);
 	}
 
