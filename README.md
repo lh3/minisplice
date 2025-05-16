@@ -58,10 +58,11 @@ A (for acceptor) and the score, which is 2log2-scaled odds ratio of the
 estimated probability of the site being real over the genome-wide fraction of
 annotated splice sites (the null model). Miniprot can take this file as input
 with option `--spsc`. Note that this option was added in miniprot-0.14 (r265),
-but older versions may lead to an assertion failure. Miniprot-r271+ is
-recommended.
+but versions before r271 may lead to an assertion failure.
 
 ### Training
+
+The following command lines show how to train and calibrate a model for one genome:
 ```sh
 # convert gene annotation in GTF/GFF3 to BED12
 script/gff2bed.js -pl anno.gtf.gz | gzip > anno-long.bed.gz  # longest protein-coding only
@@ -79,6 +80,18 @@ script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
 # prediction
 ./minisplice predict -t16 -c model.cali model.kan genome.fa.gz > score.tsv
 ```
+You can train on odd chromosomes and calibrate on even chromosomes. To train a
+model from multiple species:
+```sh
+./minisplice gentrain anno1-long.bed.gz genome1-odd.fa.gz | gzip > train1.txt.gz
+./minisplice gentrain anno2-long.bed.gz genome2-odd.fa.gz | gzip > train2.txt.gz
+cat train*.txt.gz | ./minisplice train -t16 -o model.kan -
+./minisplice predict -t16 -b anno1-all.bed.gz model.kan genome1-even.fa.gz > cali1.txt
+./minisplice predict -t16 -b anno1-all.bed.gz model.kan genome2-even.fa.gz > cali2.txt
+script/merge_cali.js 1,1 cali1.txt cali2.txt > model.cali
+```
+Usually one genome provides enough training data. You can subsample training
+data from each genome before combining them.
 
 [mp]: https://github.com/lh3/miniprot
 [mm]: https://github.com/lh3/minimap2
