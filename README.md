@@ -1,0 +1,84 @@
+## Getting Started
+```sh
+# compile
+git clone https://github.com/lh3/minisplice
+cd minisplice && make
+
+# download vertebrate-insect pre-trained model and calibration data
+wget
+wget
+
+# compute the splice score for GT and AG sites; see below for model training
+./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
+```
+
+## Introduction
+
+**What:** minisplice is a command-line tool to estimate the odds-ratio score of
+canonical donor (GT) and acceptor (AG) splice sites. It is intended to be used
+with [miniprot][mp] (r271+) for improving alignment accuracy especially for
+distant homologs.
+
+**Why:** protein-to-genome aligners like miniprot and GeneWise are effectively
+gene-finders that trace open-reading frames and model splice signals. For
+distant homologs, the splice model plays an important role in resolving
+alignment around splice junctions. Miniprot uses a simplistic model with 4--5
+parameters based on human data. While this model is reasonably generic and
+robust in practice, it losses power in comparison to more sophisticated
+solutions such as position weight matrix.
+
+**How:** minisplice trains a 1D convolutional neural network (1D-CNN) on
+sequences around annotated and random GT- or -AG sites from the genome,
+calibrates the model output to empirical probability, and computes the
+odds-ratio score of each GT- or -AG in the genome. Training can be applied to
+multiple distantly related species. **One** model trained from mouse,
+chicken, zebrafish, Drosophila (fruit fly) and Anopheles (mosquito) apparently
+works well for vertebrtes and insect.
+
+## Usage
+
+### Prediction
+
+If your target genome is a vertebrate or insect, you can use pre-trained model:
+```sh
+./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
+```
+where `vi1.kan` encodes the model and `vi1.kan.cali` provides calibration data
+which is used to translate the model output to empirical probability. The
+output looks like:
+```txt
+2L  1005295  +   A   2
+2L  1005339  -   D   13
+2L  1005339  -   A   0
+2L  1005410  -   A   -5
+2L  1005415  -   A   -5
+```
+Each line gives contig/chromosome name, offset, strand, D (for donor) or
+A (for acceptor) and the score, which is 2log2-scaled odds ratio of the
+estimated probability of the site being real over the genome-wide fraction of
+annotated splice sites (the null model). Miniprot can take this file as input
+with option `--spsc`. Note that this option was added in miniprot-0.14 (r265),
+but older versions may lead to an assertion failure. Miniprot-r271+ is
+recommended.
+
+### Training
+```sh
+# convert gene annotation in GTF/GFF3 to BED12
+script/gff2bed.js -pl anno.gtf.gz | gzip > anno-long.bed.gz  # longest protein-coding only
+script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
+
+# generate training data
+./minisplice gentrain anno-long.bed.gz genome-odd.fa.gz | gzip > train.txt.gz
+
+# model training; 8 or 16 threads are recommended
+./minisplice train -t16 -o model.kan train.txt.gz
+
+# calibration (computing empirical probability)
+./minisplice predict -t16 -b anno-all.bed.gz model.kan genome-even.fa.gz > model.cali
+
+# prediction
+./minisplice predict -t16 -c model.cali model.kan genome.fa.gz > score.tsv
+```
+
+[mp]: https://github.com/lh3/miniprot
+[mm]: https://github.com/lh3/minimap2
