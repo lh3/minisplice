@@ -18,27 +18,6 @@ static kann_t *msp_model_gen(int n_out, int len, int k_size, int n_flt, int n_fc
 	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
 }
 
-static kann_t *msp_model_gen2(int n_out, int len, int k_size, int n_flt, int n_fc, float dropout)
-{
-	kad_node_t *t, *s[3];
-	int k, len_end = (int)(len * .4);
-	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
-	s[0] = kad_slice(t, 2, 0, len_end);
-	s[1] = kad_slice(t, 2, len_end, len - len_end);
-	s[2] = kad_slice(t, 2, len - len_end, len);
-	for (k = 0; k < 3; ++k)
-		s[k] = kad_relu(kann_layer_conv1d(s[k], n_flt, k_size, 1, 0));
-	for (k = 0; k < 3; ++k) {
-		s[k] = kad_relu(kann_layer_conv1d(s[k], n_flt, k_size, 1, 0));
-		if (dropout > 0.0f) s[k] = kann_layer_dropout(s[k], dropout);
-		s[k] = kad_max1d(s[k], 3, 3, 0);
-	}
-	t = kad_concat(2, 3, s[0], s[1], s[2]);
-	t = kad_relu(kann_layer_dense(t, n_fc));
-	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
-	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
-}
-
 typedef struct {
 	int64_t n;
 	int32_t n_label, len;
@@ -89,14 +68,14 @@ int main_train(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
 	int c, k_size = 5, n_flt = 32, n_fc = 64, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
-	int max_drop_streak = 10, seed = 11, use_3piece = 0, print_model = 0;
+	int max_drop_streak = 10, seed = 11, print_model = 0;
 	float lr = 0.001f, dropout = 0.2f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:3i:o:p", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:i:o:p", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
@@ -105,7 +84,6 @@ int main_train(int argc, char *argv[])
 		else if (c == 'r') lr = atof(o.arg);
 		else if (c == 'd') dropout = atof(o.arg);
 		else if (c == 's') seed = atoi(o.arg);
-		else if (c == '3') use_3piece = 1;
 		else if (c == 'i') fn_in = o.arg;
 		else if (c == 'o') fn_out = o.arg;
 		else if (c == 'p') print_model = 1;
@@ -117,8 +95,7 @@ int main_train(int argc, char *argv[])
 		fprintf(stderr, "  Model construction:\n");
 		fprintf(stderr, "    -k INT     kernel size [%d]\n", k_size);
 		fprintf(stderr, "    -f INT     number of filters [%d]\n", n_flt);
-		fprintf(stderr, "    -d FLOAT   dropout [%g]\n", dropout);
-		fprintf(stderr, "    -3         use a 3-piece model\n");
+		fprintf(stderr, "    -d FLOAT   dropout (larger for smaller datasets) [%g]\n", dropout);
 		fprintf(stderr, "  Model training:\n");
 		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
 		fprintf(stderr, "    -e INT     min number of epoches [%d]\n", min_epoch);
@@ -147,8 +124,7 @@ int main_train(int argc, char *argv[])
 	msp_sdata_destroy(d);
 
 	if (fn_in) ann = kann_load(fn_in);
-	else if (use_3piece) ann = msp_model_gen2(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
-	else ann = msp_model_gen(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
+	ann = msp_model_gen(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
 	assert(ann);
 
 	if (print_model) {
