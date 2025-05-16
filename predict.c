@@ -109,7 +109,7 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t
 				double f = t.a[i].f >= 0.0? t.a[i].f : 0.0;
 				int32_t b = (int32_t)(f / e->step);
 				if (b == 0) continue;
-				spsc = (int32_t)(e->bin[b].spsc + .499);
+				spsc = e->bin[b].spsc > 0.0? (int32_t)(e->bin[b].spsc + .499) : (int32_t)(e->bin[b].spsc - .499);
 				if (spsc <= min_score) continue;
 				if (spsc > max_score) spsc = max_score;
 			}
@@ -117,11 +117,12 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t
 			msp_sprintf_lite(&out, "%s\t%ld\t%c\t%c\t", name, (long)(t.a[i].x>>3), "+-"[t.a[i].x>>2&1], "DA"[t.a[i].x>>1&1]);
 			if (e) {
 				msp_sprintf_lite(&out, "%d\n", spsc);
-				fwrite(out.s, 1, out.l, stdout);
 			} else {
-				fwrite(out.s, 1, out.l, stdout);
-				printf("%.4f\n", t.a[i].f);
+				char f[20];
+				snprintf(f, 20, "%.4f", t.a[i].f);
+				msp_sprintf_lite(&out, "%s\n", f);
 			}
+			fwrite(out.s, 1, out.l, stdout);
 		}
 		if (msp_verbose >= 3)
 			fprintf(stderr, "[M::%s@%.3f*%.2f] processed sequence '%s'\n", __func__, msp_realtime(), msp_percent_cpu(), name);
