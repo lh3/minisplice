@@ -90,7 +90,7 @@ int main_train(int argc, char *argv[])
 	ketopt_t o = KETOPT_INIT;
 	int c, k_size = 5, n_flt = 32, n_fc = 64, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10, seed = 11, use_3piece = 0, print_model = 0;
-	float lr = 0.001f, dropout = 0.4f;
+	float lr = 0.001f, dropout = 0.2f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	char *fn_in = 0, *fn_out = 0;
