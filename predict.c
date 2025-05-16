@@ -269,14 +269,14 @@ void msp_eval_print(FILE *fp, const msp_eval_t *e)
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13, print_cali = 0;
 	kann_t *ann;
 	char *fn_bed = 0, *fn_cali = 0;
 	float step = 0.02f;
 	msp_file_t *fx = 0;
 	msp_sdata_t *sd = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:l:h:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:l:h:E", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'd') type |= 1;
@@ -287,6 +287,7 @@ int main_predict(int argc, char *argv[])
 		else if (c == 'c') fn_cali = o.arg;
 		else if (c == 'l') min_score = atoi(o.arg);
 		else if (c == 'h') max_score = atoi(o.arg);
+		else if (c == 'E') print_cali = 1;
 	}
 	if (argc - o.ind < 2) {
 		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
@@ -296,6 +297,7 @@ int main_predict(int argc, char *argv[])
 		fprintf(stderr, "    -m INT      minibatch size [%d]\n", mb_sz);
 		fprintf(stderr, "    -d          donor only\n");
 		fprintf(stderr, "    -a          acceptor only\n");
+		fprintf(stderr, "    -E          print calibration data\n");
 		fprintf(stderr, "  Prediction:\n");
 		fprintf(stderr, "    -c FILE     calibration data []\n");
 		fprintf(stderr, "    -l INT      min score [%d]\n", min_score);
@@ -332,7 +334,10 @@ int main_predict(int argc, char *argv[])
 	} else { // for prediction
 		msp_eval_t *e = 0;
 		if (fn_cali) e = msp_eval_read(fn_cali);
-		msp_predict_print(ann, fx, e, min_score, max_score, mb_sz, type);
+		if (e && print_cali)
+			msp_eval_print(stdout, e);
+		else
+			msp_predict_print(ann, fx, e, min_score, max_score, mb_sz, type);
 		free(e);
 	}
 

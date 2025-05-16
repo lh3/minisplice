@@ -109,6 +109,7 @@ int main_train(int argc, char *argv[])
 		fprintf(stderr, "    -p         print model structure\n");
 		fprintf(stderr, "Input format:\n");
 		fprintf(stderr, "  Two columns: integer label, and fixed-length sequence\n");
+		fprintf(stderr, "  Or gentrain output\n");
 		return 1;
 	}
 
