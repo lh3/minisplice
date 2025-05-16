@@ -22,10 +22,10 @@ distant homologs.
 **Why:** protein-to-genome aligners like miniprot and GeneWise are effectively
 gene-finders that trace open-reading frames and model splice signals. For
 distant homologs, the splice model plays an important role in resolving
-alignment around splice junctions. Miniprot uses a simplistic model with 4--5
-parameters based on human data. While this model is reasonably generic and
-robust in practice, it losses power in comparison to more sophisticated
-solutions such as position weight matrix.
+alignment around splice junctions. Miniprot uses a simplistic model with 4-5
+parameters based on human data. While this model is reasonably robust in
+practice, it losses power in comparison to more sophisticated solutions such as
+position weight matrix.
 
 **How:** minisplice trains a 1D convolutional neural network (1D-CNN) on
 sequences around annotated and random GT- or -AG sites from the genome,
@@ -74,7 +74,7 @@ script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
 # model training; 8 or 16 threads are recommended
 ./minisplice train -t16 -o model.kan train.txt.gz
 
-# calibration (computing empirical probability)
+# calibration (computing empirical odds-ratio scores)
 ./minisplice predict -t16 -b anno-all.bed.gz model.kan genome-even.fa.gz > model.cali
 
 # prediction
@@ -90,8 +90,10 @@ cat train*.txt.gz | ./minisplice train -t16 -o model.kan -
 ./minisplice predict -t16 -b anno1-all.bed.gz model.kan genome2-even.fa.gz > cali2.txt
 script/merge_cali.js 1,1 cali1.txt cali2.txt > model.cali
 ```
-Usually one genome provides enough training data. You can subsample training
-data from each genome before combining them.
+Usually one genome provides enough training data. To save training time, you
+can subsample training data from each genome before combining them. If you
+subsample training data at different rates, it is recommended to provides the
+rates on the `merge_cali.js` command line.
 
 [mp]: https://github.com/lh3/miniprot
 [mm]: https://github.com/lh3/minimap2
