@@ -10,6 +10,9 @@ wget https://zenodo.org/records/15446315/files/vi1.kan.cali
 
 # compute the splice score for GT and AG sites; see below for model training
 ./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
+
+# use splice scores (requiring miniprot r271+)
+miniprot -Iut16 --spsc=score.tsv.gz genome.fa.gz proteins.faa > align.gff
 ```
 
 ## Introduction
