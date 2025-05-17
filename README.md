@@ -17,7 +17,8 @@ wget https://zenodo.org/records/15446315/files/vi1.kan.cali
 **What:** minisplice is a command-line tool to estimate the odds-ratio score of
 canonical donor (GT) and acceptor (AG) splice sites. It is intended to be used
 with [miniprot][mp] (r271+) for improving alignment accuracy especially for
-distant homologs.
+distant homologs. Pre-trained models and pre-computed splice scores can be found
+[at Zenodo][zn].
 
 **Why:** protein-to-genome aligners like miniprot and GeneWise are effectively
 gene-finders that trace open-reading frames and model splice signals. For
@@ -97,3 +98,4 @@ rates on the `merge_cali.js` command line.
 
 [mp]: https://github.com/lh3/miniprot
 [mm]: https://github.com/lh3/minimap2
+[zn]: https://zenodo.org/records/15446314
