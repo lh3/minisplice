@@ -5,8 +5,8 @@ git clone https://github.com/lh3/minisplice
 cd minisplice && make
 
 # download vertebrate-insect pre-trained model and calibration data
-wget
-wget
+wget https://zenodo.org/records/15446315/files/vi1.kan
+wget https://zenodo.org/records/15446315/files/vi1.kan.cali
 
 # compute the splice score for GT and AG sites; see below for model training
 ./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
