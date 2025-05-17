@@ -92,12 +92,12 @@ model from multiple species:
 cat train*.txt.gz | ./minisplice train -t16 -o model.kan -
 ./minisplice predict -t16 -b anno1-all.bed.gz model.kan genome1-even.fa.gz > cali1.txt
 ./minisplice predict -t16 -b anno1-all.bed.gz model.kan genome2-even.fa.gz > cali2.txt
-script/merge_cali.js 1,1 cali1.txt cali2.txt > model.cali
+script/merge-cali.js 1,1 cali1.txt cali2.txt > model.cali
 ```
 Usually one genome provides enough training data. To save training time, you
 can subsample training data from each genome before combining them. If you
 subsample training data at different rates, it is recommended to provides the
-rates on the `merge_cali.js` command line.
+rates on the `merge-cali.js` command line.
 
 [mp]: https://github.com/lh3/miniprot
 [mm]: https://github.com/lh3/minimap2

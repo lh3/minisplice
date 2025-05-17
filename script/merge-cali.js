@@ -14,7 +14,7 @@ function* k8_readline(fn) {
 
 function main(args) {
 	if (args.length < 3) {
-		print("Usage: merge_cali.js <r1>,<r2>,... <f1.eval> <f2.eval> ...");
+		print("Usage: merge-cali.js <r1>,<r2>,... <f1.eval> <f2.eval> ...");
 		return;
 	}
 	let frac = args[0].split(",");
