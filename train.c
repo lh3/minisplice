@@ -67,7 +67,7 @@ static void msp_fdata_destroy(msp_fdata_t *f)
 int main_train(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int c, k_size = 5, n_flt = 32, n_fc = 64, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
+	int c, k_size = 5, n_flt = 16, n_fc = 32, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10, seed = 11, print_model = 0;
 	float lr = 0.001f, dropout = 0.2f;
 	msp_sdata_t *d;
@@ -75,10 +75,11 @@ int main_train(int argc, char *argv[])
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:i:o:p", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:i:o:pF:", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
+		else if (c == 'F') n_fc = atoi(o.arg);
 		else if (c == 'E') max_epoch = atoi(o.arg);
 		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'r') lr = atof(o.arg);
@@ -93,8 +94,9 @@ int main_train(int argc, char *argv[])
 		fprintf(stderr, "Usage: minisplice train [options] <in.data>\n");
 		fprintf(stderr, "Options:\n");
 		fprintf(stderr, "  Model construction:\n");
-		fprintf(stderr, "    -k INT     kernel size [%d]\n", k_size);
-		fprintf(stderr, "    -f INT     number of filters [%d]\n", n_flt);
+		fprintf(stderr, "    -k INT     1D-CNN kernel size [%d]\n", k_size);
+		fprintf(stderr, "    -f INT     number of features per 1D-CNN layer [%d]\n", n_flt);
+		fprintf(stderr, "    -F INT     number of neurons in the dense layer [%d]\n", n_fc);
 		fprintf(stderr, "    -d FLOAT   dropout (larger for smaller datasets) [%g]\n", dropout);
 		fprintf(stderr, "  Model training:\n");
 		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
