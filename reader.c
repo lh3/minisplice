@@ -134,10 +134,10 @@ int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 			if (i == 0) { // ctg
 				t.ctg = q, ctg_len = p - q;
 			} else if (i == 1) { // start
-				t.st = t.st2 = atol(q); // TODO: watch out integer overflow!
+				t.st = atol(q); // TODO: watch out integer overflow!
 				if (t.st < 0) break;
 			} else if (i == 2) { // end
-				t.en = t.en2 = atol(q);
+				t.en = atol(q);
 				if (t.en < 0) break;
 			} else if (i == 3) {
 				if (*q == '.' && p - q == 1)
@@ -149,9 +149,9 @@ int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 			} else if (i == 5) { // strand
 				t.strand = *q == '+'? 1 : *q == '-'? -1 : 0;
 			} else if (i == 6) {
-				t.st2 = atol(q);
+				t.st2 = p - q == 0 || *q == '.'? -1 : atol(q);
 			} else if (i == 7) {
-				t.en2 = atol(q);
+				t.en2 = p - q == 0 || *q == '.'? -1 : atol(q);
 			} else if (i == 9) {
 				if (*q < '0' || *q > '9') break;
 				t.n_blk = atol(q);
@@ -167,7 +167,7 @@ int msp_bed_read1(msp_file_t *fp, msp_bed1_t **b_)
 
 	if (i < 3) return -2; // need at least three fields
 	if (t.st < 0 || t.en < 0 || t.st > t.en || ctg_len == 0) return -3;
-	if (t.st2 < t.st || t.en2 > t.en || t.st2 > t.en2) return -3;
+	if (t.st2 >= 0 && t.en2 >= 0 && (t.st2 < t.st || t.en2 > t.en || t.st2 > t.en2)) return -3;
 
 	tot_len = sizeof(msp_blk1_t) * t.n_blk + (ctg_len + 1) + (name_len + 1);
 	tot_cnt = (tot_len + sizeof(msp_blk1_t) - 1) / sizeof(msp_blk1_t);

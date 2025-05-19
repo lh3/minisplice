@@ -81,8 +81,11 @@ void msp_bed_format(kstring_t *out, const msp_bed1_t *b)
 	else msp_sprintf_lite(out, ".");
 	if (b->score >= 0) msp_sprintf_lite(out, "\t%d", b->score);
 	else msp_sprintf_lite(out, "\t.");
-	if (b->st2 != b->st || b->en2 != b->en || b->n_blk > 0) {
-		msp_sprintf_lite(out, "\t%ld\t%ld", b->st2, b->en2);
+	if (b->st2 >= 0 || b->en2 >= 0 || b->n_blk > 0) {
+		if (b->st2 < 0 || b->en2 < 0)
+			msp_sprintf_lite(out, "\t.\t.");
+		else
+			msp_sprintf_lite(out, "\t%ld\t%ld", b->st2, b->en2);
 		if (b->n_blk > 0) {
 			msp_sprintf_lite(out, "\t.\t%d\t", b->n_blk);
 			for (i = 0; i < b->n_blk; ++i)
