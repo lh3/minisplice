@@ -5,27 +5,31 @@ git clone https://github.com/lh3/minisplice
 cd minisplice && make
 
 # download vertebrate-insect pre-trained model and calibration data
-wget https://zenodo.org/records/15446315/files/vi1.kan
-wget https://zenodo.org/records/15446315/files/vi1.kan.cali
+wget https://zenodo.org/records/15492781/files/vi1-35k.kan
+wget https://zenodo.org/records/15492781/files/vi1-35k.kan.cali
 
 # compute the splice score for GT and AG sites; see below for model training
-./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
+./minisplice predict -t16 -c vi1-35k.kan.cali vi1-35k.kan genome.fa.gz > score.tsv
 
-# use splice scores (requiring miniprot r271+)
-miniprot -Iut16 --gff -j2 --spsc=score.tsv.gz genome.fa.gz proteins.faa > align.gff
+# use splice scores (miniprot r272+ recommended)
+miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
+
+# use pre-calculated human or Drosophila scores
+wget https://zenodo.org/records/15492781/files/human-GRCh38.spsc.tsv.gz
+miniprot -Iut16 --gff -j2 --spsc=human-GRCh38.spsc.tsv.gz hg38.fa proteins.faa
 ```
 
 ## Introduction
 
 **What:** minisplice is a command-line tool to estimate the odds-ratio score of
 canonical donor (GT) and acceptor (AG) splice sites. It is intended to be used
-with [miniprot][mp] (r271+) for improving alignment accuracy especially for
+with [miniprot][mp] (r272+) for improving alignment accuracy especially for
 distant homologs. Pre-trained models and pre-computed splice scores can be found
 [at Zenodo][zn].
 
 **Why:** protein-to-genome aligners like miniprot and GeneWise are effectively
 gene-finders that trace open-reading frames and model splice signals. For
-distant homologs, the splice model plays an important role in resolving
+distant homologs, the splice model plays an important role in resolving ambiguous
 alignment around splice junctions. Miniprot uses a simplistic model with 4-5
 parameters based on human data. While this model is reasonably robust in
 practice, it losses power in comparison to more sophisticated solutions such as
@@ -35,8 +39,8 @@ position weight matrix.
 sequences around annotated and random GT- or -AG sites from the genome,
 calibrates the model output to empirical probability, and computes the
 odds-ratio score of each GT- or -AG in the genome. Training can be applied to
-multiple distantly related species. **One** model trained from mouse,
-chicken, zebrafish, Drosophila (fruit fly) and Anopheles (mosquito) apparently
+multiple distantly related species. For example, **one** model trained from mouse,
+chicken, zebrafish, *Drosophila* (fruit fly) and *Anopheles* (mosquito) apparently
 works well for vertebrtes and insect.
 
 ## Usage
@@ -45,9 +49,9 @@ works well for vertebrtes and insect.
 
 If your target genome is a vertebrate or insect, you can use pre-trained model:
 ```sh
-./minisplice predict -t16 -c vi1.kan.cali vi1.kan genome.fa.gz | gzip > score.tsv.gz
+./minisplice predict -t16 -c vi1-35k.kan.cali vi1-35k.kan genome.fa.gz > score.tsv
 ```
-where `vi1.kan` encodes the model and `vi1.kan.cali` provides calibration data
+where `vi1-35k.kan` encodes the model and `vi1-35k.kan.cali` provides calibration data
 which is used to translate the model output to empirical probability. The
 output looks like:
 ```txt
@@ -82,7 +86,7 @@ script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
 ./minisplice predict -t16 -b anno-all.bed.gz model.kan genome-even.fa.gz > model.cali
 
 # prediction
-./minisplice predict -t16 -c model.cali model.kan genome.fa.gz > score.tsv
+./minisplice predict -t16 -c model.cali model.kan genome.fa.gz | gzip > score.tsv.gz
 ```
 You can train on odd chromosomes and calibrate on even chromosomes. To train a
 model from multiple species:
