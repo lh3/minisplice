@@ -5,17 +5,16 @@ git clone https://github.com/lh3/minisplice
 cd minisplice && make
 
 # download vertebrate-insect pre-trained model and calibration data
-wget https://zenodo.org/records/15492781/files/vi1-35k.kan
-wget https://zenodo.org/records/15492781/files/vi1-35k.kan.cali
+wget -O- https://zenodo.org/records/15513901/files/vi2-35k.tgz | tar zxf -
 
 # compute the splice score for GT and AG sites; see below for model training
-./minisplice predict -t16 -c vi1-35k.kan.cali vi1-35k.kan genome.fa.gz > score.tsv
+./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
 
 # use splice scores (miniprot r272+ recommended)
 miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
 
 # use pre-calculated human or Drosophila scores
-wget https://zenodo.org/records/15492781/files/human-GRCh38.spsc.tsv.gz
+wget https://zenodo.org/records/15513901/files/human-GRCh38.vi2-35k.tsv.gz
 miniprot -Iut16 --gff -j2 --spsc=human-GRCh38.spsc.tsv.gz hg38.fa proteins.faa
 ```
 
@@ -49,9 +48,9 @@ works well for vertebrtes and insect.
 
 If your target genome is a vertebrate or insect, you can use pre-trained model:
 ```sh
-./minisplice predict -t16 -c vi1-35k.kan.cali vi1-35k.kan genome.fa.gz > score.tsv
+./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
 ```
-where `vi1-35k.kan` encodes the model and `vi1-35k.kan.cali` provides calibration data
+where `vi2-35k.kan` encodes the model and `vi2-35k.kan.cali` provides calibration data
 which is used to translate the model output to empirical probability. The
 output looks like:
 ```txt
