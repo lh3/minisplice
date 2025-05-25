@@ -15,7 +15,7 @@ miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
 
 # use pre-calculated human or Drosophila scores
 wget https://zenodo.org/records/15513901/files/human-GRCh38.vi2-35k.tsv.gz
-miniprot -Iut16 --gff -j2 --spsc=human-GRCh38.spsc.tsv.gz hg38.fa proteins.faa
+miniprot -Iut16 --gff -j2 --spsc human-GRCh38.vi2-35k.tsv.gz hg38.fa proteins.faa
 ```
 
 ## Introduction
