@@ -10,8 +10,9 @@ wget -O- https://zenodo.org/records/15513901/files/vi2-35k.tgz | tar zxf -
 # compute the splice score for GT and AG sites; see below for model training
 ./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
 
-# use splice scores (miniprot r272+ recommended)
+# use splice scores (miniprot-v0.16+ or minimap2-r1285+)
 miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
+minimap2 -cxsplice:hq -t16 --spsc=score.tsv genome.fa.gz rna-seq.fq > align.paf
 
 # use pre-calculated human or Drosophila scores
 wget https://zenodo.org/records/15513901/files/human-GRCh38.vi2-35k.tsv.gz
@@ -22,7 +23,7 @@ miniprot -Iut16 --gff -j2 --spsc human-GRCh38.vi2-35k.tsv.gz hg38.fa proteins.fa
 
 **What:** minisplice is a command-line tool to estimate the odds-ratio score of
 canonical donor (GT) and acceptor (AG) splice sites. It is intended to be used
-with [miniprot][mp] (r272+) for improving alignment accuracy especially for
+with [miniprot][mp] (v0.16+) or [minimap2][mm2] (r1285+) for improving alignment accuracy especially for
 distant homologs. Pre-trained models and pre-computed splice scores can be found
 [at Zenodo][zn].
 
@@ -65,7 +66,7 @@ A (for acceptor) and the score, which is 2log2-scaled odds ratio of the
 estimated probability of the site being real over the genome-wide fraction of
 annotated splice sites (the null model). Miniprot can take this file as input
 with option `--spsc`. Note that this option was added in miniprot-0.14 (r265),
-but versions before r271 may lead to an assertion failure.
+but versions before v0.16 may lead to an assertion failure.
 
 ### Training
 
@@ -103,5 +104,5 @@ subsample training data at different rates, it is recommended to provides the
 rates on the `merge-cali.js` command line.
 
 [mp]: https://github.com/lh3/miniprot
-[mm]: https://github.com/lh3/minimap2
+[mm2]: https://github.com/lh3/minimap2
 [zn]: https://zenodo.org/records/15446314
