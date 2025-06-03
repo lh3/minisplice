@@ -1,0 +1,122 @@
+\documentclass[webpdf,contemporary,large,namedate]{oup-authoring-template}%
+
+%\PassOptionsToPackage{hyphens}{url}
+%\PassOptionsToPackage{colorlinks,linkcolor=blue,urlcolor=blue,citecolor=blue,anchorcolor=blue}{hyperref}
+
+\DeclareMathOperator*{\argmax}{argmax}
+
+\usepackage{algorithmicx}
+\usepackage{lmodern}
+\usepackage{setspace}
+\renewcommand{\ttdefault}{cmtt}
+
+\begin{document}
+\journaltitle{TBD}
+\DOI{TBD}
+\copyrightyear{2025}
+\pubyear{2025}
+\access{Advance Access Publication Date: Day Month Year}
+\appnotes{Preprint}
+\firstpage{1}
+
+\title[Improving spliced alignment]{Modeling splice sites with deep learning Improves spliced alignment}
+\author[1]{Siying Yang}
+\author[1,2]{Neng Huang}
+\author[1,2,3,$\ast$]{Heng Li\ORCID{0000-0003-4874-2874}}
+\address[1]{Department of Biomedical Informatics, Harvard Medical School, 10 Shattuck St, Boston, MA 02215, USA}
+\address[2]{Department of Data Science, Dana-Farber Cancer Institute, 450 Brookline Ave, Boston, MA 02215, USA}
+\address[3]{Broad Insitute of MIT and Harvard, 415 Main St, Cambridge, MA 02142, USA}
+\corresp[$\ast$]{Corresponding author. \href{mailto:hli@ds.dfci.harvard.edu}{hli@ds.dfci.harvard.edu}}
+
+%\received{Date}{0}{Year}
+%\revised{Date}{0}{Year}
+%\accepted{Date}{0}{Year}
+
+\abstract{
+\sffamily\footnotesize
+\textbf{Motivation:}
+Spliced alignment refers to the alignment of mRNA or protein sequences to eukaryotic genomes.
+It plays a critical role in gene annotation and the study of gene functions.
+Accurate spliced alignment demands sophisticated modeling of splice sites,
+but current aligners use simple models, which may affect their accuracy given dissimilar sequences.
+\vspace{0.5em}\\
+\textbf{Results:}
+We implemented minisplice that learns splice signals with one-dimensional convolutional neural network (1D-CNN)
+and estimates the empirical splicing probability for every {\tt GT} and {\tt AG} sites in the genome.
+We modified minimap2 and miniprot to take advantage of pre-computed splicing probability during alignment.
+Evaluated on human long-read RNA-seq data and cross-species protein datasets,
+this strategy can greatly improve the junction accuracy especially for noisy long reads
+or proteins of distant homology.
+\vspace{0.5em}\\
+\textbf{Availability and implementation:}
+\url{https://github.com/lh3/minisplice}
+}
+
+\maketitle
+
+\section{Introduction}
+
+RNA splicing is the process of removing introns from precursor messenger RNAs (mRNAs).
+It is widespread in eukaryotic genomes.
+Each human protein-coding gene, for example, contains 9.4 introns on average.
+The 5'-end of an intron is called a \emph{donor} site
+and 3'-end call an \emph{acceptor} site.
+In human, $>$98\% of introns start with {\tt GT} on the genome (or more precisely {\tt GU} on the RNA)
+and $>$99\% end with {\tt AG}~\citep{Sibley:2016vh}.
+On the other hand, there are hundreds of millions of di-nucleotide {\tt GT} or {\tt AG}
+in the human genome.
+Only $\sim$0.1\% of them are real splice sites.
+It is non-trivial to identify the real splice sites, which is required for annotating most genes in eukaryotic genomes.
+
+To annotate splice sites and genes in a new genome,
+we can perform RNA sequencing (RNA-seq) and align mRNA sequences to the target genome.
+This approach does not work well for genes lowly expressed in the sequenced tissues.
+A complement strategy is to align mRNA or protein sequences from other species to the target genome.
+Spliced alignment through introns is essential in both cases.
+
+Qualified spliced aligners look for conserved splice sites
+when the residue alignment around a splice site is ambiguous.
+For example, the three alignments in Fig.~\ref{fig:1} are equally good if we disregard splicing sites.
+However, as the putative intron in alignment (1) does not match the {\tt GT..AG}
+signal, it is probably not a real intron.
+While both (2) and (3) match the signal,
+alignment (3) is more likely to be real because it fits the splice consensus {\tt GTR..YAG} better~\citep{Irimia:2008aa},
+where ``{\tt R}'' stands for an {\tt A} or a {\tt G} base and ``{\tt Y}'' for {\tt C} or {\tt T}.
+To find the best alignment, spliced aligners need to model splice sites.
+They sometimes introduce mismatches and gaps to reach splice sites.
+The model becomes more important for diverged sequences
+when aligners need to choose between multiple similarly scored alignments around splice junctions.
+
+\begin{figure}[b]
+\centering
+\includegraphics[width=.35\textwidth]{fig1}
+\caption{Different alignment of an identical genome-mRNA sequence pair.}\label{fig:1}
+\end{figure}
+
+\section*{Acknowledgments}
+
+\section*{Author contributions}
+
+H.L. conceived the project.
+S.Y., N.H. and H.L. implemented the algorithms and analyzed the data.
+S.Y. and H.L. drafted the manuscript.
+
+\section*{Conflict of interest}
+
+None declared.
+
+\section*{Funding}
+
+This work is supported by National Institute of Health grant R01HG010040 and U01HG010961 (to H.L.).
+
+\section*{Data availability}
+
+The ropebwt3 source code is available at \url{https://github.com/lh3/ropebwt3}.
+Prebuilt ropebwt3 indices can be obtained from \url{https://doi.org/10.5281/zenodo.11533210}
+and \url{https://doi.org/10.5281/zenodo.13948741}.
+
+\bibliographystyle{apalike}
+{\sffamily\small
+\bibliography{minisplice}}
+
+\end{document}
