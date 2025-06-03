@@ -72,6 +72,10 @@ but versions before v0.16 may lead to an assertion failure.
 
 The following command lines show how to train and calibrate a model for one genome:
 ```sh
+
+# Get the k8 javascript shell and add it to your path
+wget -O- https://github.com/attractivechaos/k8/releases/download/v1.2/k8-1.2.tar.bz2 | tar -jxf - && mv k8* k8 && cp k8/k8-x86_64-Linux k8/k8
+
 # convert gene annotation in GTF/GFF3 to BED12
 script/gff2bed.js -pl anno.gtf.gz | gzip > anno-long.bed.gz  # longest protein-coding only
 script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
