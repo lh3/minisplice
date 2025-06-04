@@ -47,7 +47,10 @@ works well for vertebrtes and insect.
 
 ### Prediction
 
-If your target genome is a vertebrate or insect, you can use pre-trained model:
+If your target genome is a vertebrate or insect, you can use pre-trained model to 
+generate genome-specific scores. Note that the `score.tsv` file needed for miniprot
+or minimap2 usage needs to be generated for each genome assembly, since it uses 
+chromosome names and positions:
 ```sh
 ./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
 ```
