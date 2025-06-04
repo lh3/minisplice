@@ -44,8 +44,8 @@ but current aligners use simple models, which may affect their accuracy given di
 We implemented minisplice that learns splice signals with one-dimensional convolutional neural network (1D-CNN)
 and estimates the empirical splicing probability for every {\tt GT} and {\tt AG} sites in the genome.
 We modified minimap2 and miniprot to take advantage of pre-computed splicing probability during alignment.
-Evaluated on human long-read RNA-seq data and cross-species protein datasets,
-this strategy can greatly improve the junction accuracy especially for noisy long reads
+Evaluating on human long-read RNA-seq data and cross-species protein datasets,
+we show this strategy can greatly improve the junction accuracy especially for noisy long reads
 or proteins of distant homology.
 \vspace{0.5em}\\
 \textbf{Availability and implementation:}
@@ -56,42 +56,75 @@ or proteins of distant homology.
 
 \section{Introduction}
 
-RNA splicing is the process of removing introns from precursor messenger RNAs (mRNAs).
-It is widespread in eukaryotic genomes.
-Each human protein-coding gene, for example, contains 9.4 introns on average.
-The 5'-end of an intron is called a \emph{donor} site
-and 3'-end call an \emph{acceptor} site.
-In human, $>$98\% of introns start with {\tt GT} on the genome (or more precisely {\tt GU} on the RNA)
+RNA splicing is the process of removing introns from precursor messenger RNAs (pre-mRNAs).
+It is widespread in eukaryotic genomes~\citep{Keren:2010aa}.
+%The 5'-end of an intron is called a \emph{donor} site
+%and the 3'-end called an \emph{acceptor} site.
+In human, for example, each protein-coding gene contains 9.4 introns on average;
+$>$98\% of introns start with {\tt GT} on the genome (or more precisely {\tt GU} on the pre-mRNA)
 and $>$99\% end with {\tt AG}~\citep{Sibley:2016vh}.
 On the other hand, there are hundreds of millions of di-nucleotide {\tt GT} or {\tt AG}
 in the human genome.
 Only $\sim$0.1\% of them are real splice sites.
-It is non-trivial to identify the real splice sites, which is required for annotating most genes in eukaryotic genomes.
+Identifing real splice sites, which is required for gene annotaiton,
+is challenging due to the low signal-to-noise ratio.
 
 To annotate splice sites and genes in a new genome,
 we can perform RNA sequencing (RNA-seq) and align mRNA sequences to the target genome.
-This approach does not work well for genes lowly expressed in the sequenced tissues.
+This approach does not work well for genes lowly expressed in tissues being sequenced.
 A complement strategy is to align mRNA or protein sequences from other species to the target genome.
 Spliced alignment through introns is essential in both cases.
 
-Qualified spliced aligners look for conserved splice sites
-when the residue alignment around a splice site is ambiguous.
-For example, the three alignments in Fig.~\ref{fig:1} are equally good if we disregard splicing sites.
+It is important to look for splice signals during spliced alignment
+as the residue alignment around a splice site can be ambiguous.
+For example, the three alignments in Fig.~\ref{fig:1} are equally good if we ignore splice signals.
 However, as the putative intron in alignment (1) does not match the {\tt GT..AG}
-signal, it is probably not a real intron.
+signal, it is unlikely to be real.
 While both (2) and (3) match the signal,
-alignment (3) is more likely to be real because it fits the splice consensus {\tt GTR..YAG} better~\citep{Irimia:2008aa},
+alignment (3) is more probable because it fits the splice consensus {\tt GTR..YAG} better~\citep{Irimia:2008aa,Iwata:2011aa},
 where ``{\tt R}'' stands for an {\tt A} or a {\tt G} base and ``{\tt Y}'' for {\tt C} or {\tt T}.
-To find the best alignment, spliced aligners need to model splice sites.
-They sometimes introduce mismatches and gaps to reach splice sites.
-The model becomes more important for diverged sequences
+In this toy example, the query sequence matches the reference perfectly in all three cases.
+On real data, spliced aligners may introduce extra mismatches and gaps to reach splice sites.
+The splice model has a major influence on the final alignment especially for diverged seuqences
 when aligners need to choose between multiple similarly scored alignments around splice junctions.
 
 \begin{figure}[b]
 \centering
 \includegraphics[width=.35\textwidth]{fig1}
-\caption{Different alignment of an identical genome-mRNA sequence pair.}\label{fig:1}
+\caption{Ambiguity in spliced alignment.
+The same genome-mRNA sequence pair can be aligned differently without mismatches or gaps.}\label{fig:1}
 \end{figure}
+
+Position weight matrix (PWM) is a classical method for modeling splice signals~\citep{Staden:1984aa}.
+It however does not perform well because it cannot capture dependencies between positions~\citep{Burge:1997uu}
+or model regulatory motifs that do not have fixed positions.
+Many models have been developed to overcome the limitation of PWM~\citep{Capitanchik:2025aa}.
+In recent years, deep learning is gaining attraction
+and has been shown to outperform traditional methods~\citep{Zhang:2018aa,DBLP:journals/access/DuYDZZL18,Albaradei:2020aa}.
+Early deep learning models are small~\citep{Zabardast:2023aa} with only a few 1D-CNN layers.
+Later models are larger, composed of residual blocks~\citep{Jaganathan:2019aa,Zeng:2022aa,Xu:2024aa,Chao:2024aa} or transformer blocks~\citep{You:2024aa,Chen:2024aa}.
+It is also possible to fine tune genomic large-language models for splice site prediction~\citep{Nguyen:2023aa,Dalla-Torre:2025aa,Brixi2025.02.18.638918}.
+Developed for general purposes, large-language models are computationally demanding and may be overkilling if we just use them to predict splice sites.
+
+While qualified spliced aligners all look for the {\tt GT..AG} splice signal,
+they model additional flanking sequences differently.
+Intra-species mRNA-to-genome aligners such as BLAT~\citep{Kent:2002jk}, GMAP~\citep{Wu:2005vn} and Splign~\citep{Kapustin:2008tq} often do not model extra sequences beyond {\tt GT..AG}
+because alignment itself provides strong evidence and ambiguity shown in Fig~\ref{fig:1} is rare.
+Minimap2~\citep{Li:2018ab} prefers the {\tt GTR..YAG} consensus~\citep{Irimia:2008aa}.
+This helps to improve the alignment of noisy long RNA-seq reads.
+Protein-to-genome aligners tend to employ better models due to more ambiguous alignment given distant homologs.
+Miniprot~\citep{Li:2023ab} considers rarer {\tt GC..AG} and {\tt AT..AC} splice sites and optionally prioritizes on the {\tt G|GTR..YNYAG} consensus
+common in vertebrate and insect~\citep{Iwata:2011aa}, where ``{\tt |}'' indicates splice boundaries.
+Exonerate~\citep{Slater:2005aa}, Spaln~\citep{Gotoh:2008aa,Iwata:2012aa,Gotoh:2024aa} and the original GeneWise~\citep{Birney:2004uy} use PWM.
+GeneSeqer~\citep{Usuka:2000vi} and GenomeThreader~\citep{DBLP:journals/infsof/GremmeBSK05} apply more advanced models~\citep{Brendel:1998aa,Brendel:2004aa}.
+Deep learning models have been applied to refining splice sites as a post-processing step~\citep{Chao:2024aa,Xia:2023aa}
+but have not been integrated into spliced aligners.
+
+In this article, we introduce minisplice, a command-line tool implemented in C,
+that learns splice signals and scores candidate splice sites with a small 1D-CNN model with 35 thousand parameters.
+We have modified minimap2 and miniprot to take the splice scores as input for improved spliced alignment.
+Importantly, we aim to develop a small model that is more capable than PWM and is still easy to deploy;
+we do not intend to compete with the best splice models which are orders of magnitude larger.
 
 \section*{Acknowledgments}
 
@@ -107,13 +140,12 @@ None declared.
 
 \section*{Funding}
 
-This work is supported by National Institute of Health grant R01HG010040 and U01HG010961 (to H.L.).
+This work is supported by National Institute of Health grant R01HG010040 (to H.L.).
 
 \section*{Data availability}
 
-The ropebwt3 source code is available at \url{https://github.com/lh3/ropebwt3}.
-Prebuilt ropebwt3 indices can be obtained from \url{https://doi.org/10.5281/zenodo.11533210}
-and \url{https://doi.org/10.5281/zenodo.13948741}.
+The minisplice source code is available at \url{https://github.com/lh3/minisplice}.
+Pretrained models can be obtained from \url{https://doi.org/10.5281/zenodo.15446314}.
 
 \bibliographystyle{apalike}
 {\sffamily\small
