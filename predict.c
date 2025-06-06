@@ -210,12 +210,27 @@ msp_eval_t *msp_eval(kann_t *ann, msp_file_t *fx, const msp_bed_t *bed, int32_t 
 	return e;
 }
 
+typedef struct {
+	int32_t pt, pa, nt, na;
+} estat1_t;
+
 msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, float step)
 {
-	int32_t n_in, n_out, i_out;
+	int32_t j, n_in, n_out, i_out, n_max1d = 0, i_max1d = -1, len_max1d = 0;
 	int64_t i;
 	float *x1;
 	msp_eval_t *e;
+	estat1_t *est = 0;
+	const kad_node_t *v_max1d = 0;
+
+	for (j = 0; j < ann->n; ++j)
+		if (ann->v[j]->op == 19) // 1D max-pooling
+			++n_max1d, i_max1d = j, v_max1d = ann->v[j];
+	if (n_max1d != 1) v_max1d = 0, i_max1d = -1;
+	if (v_max1d) {
+		len_max1d = kad_len(v_max1d) / v_max1d->d[0];
+		est = MSP_CALLOC(estat1_t, len_max1d);
+	}
 
 	assert(sd->n_label == 2);
 	e = msp_eval_init(step);
@@ -240,9 +255,40 @@ msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, fl
 			e->bin[b].mt++;
 			if (sd->a[i+j].label) e->bin[b].mp++;
 		}
+		if (v_max1d) {
+			int32_t B;
+			B = kad_sync_dim(ann->n, ann->v, -1);
+			kann_copy_mt(ann, B, i_max1d);
+			for (j = 0; j < k; ++j) {
+				const float *p = &v_max1d->x[j * len_max1d];
+				int32_t t, label = sd->a[i+j].label;
+				for (t = 0; t < len_max1d; ++t) {
+					if (label) est[t].pt++, est[t].pa += (p[t] > 0.0f);
+					else est[t].nt++, est[t].na += (p[t] > 0.0f);
+				}
+			}
+		}
 	}
 	free(x1);
 	msp_eval_update(e);
+	if (v_max1d) {
+		kstring_t out = {0,0,0};
+		for (j = 0; j < v_max1d->d[2]; ++j) {
+			int32_t t;
+			out.l = 0;
+			msp_sprintf_lite(&out, "MA\t%d", j);
+			for (t = 0; t < v_max1d->d[1]; ++t) {
+				double diff;
+				estat1_t *p = &est[t * v_max1d->d[2] + j];
+				diff = (double)p->pa / (double)p->pt - (double)p->na / (double)p->nt;
+				msp_sprintf_lite(&out, "\t%d", (int32_t)(diff > 0.? 100.0 * diff + .499 : 100.0 * diff - .499));
+				//msp_sprintf_lite(&out, "\t%d:%d", p->pa, p->na);
+			}
+			puts(out.s);
+		}
+		free(out.s);
+		free(est);
+	}
 	return e;
 }
 
