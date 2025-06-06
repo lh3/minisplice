@@ -35,7 +35,7 @@
 \abstract{
 \sffamily\footnotesize
 \textbf{Motivation:}
-Spliced alignment refers to the alignment of mRNA or protein sequences to eukaryotic genomes.
+Spliced alignment refers to the alignment of messenger RNA (mRNA) or protein sequences to eukaryotic genomes.
 It plays a critical role in gene annotation and the study of gene functions.
 Accurate spliced alignment demands sophisticated modeling of splice sites,
 but current aligners use simple models, which may affect their accuracy given dissimilar sequences.
@@ -44,8 +44,9 @@ but current aligners use simple models, which may affect their accuracy given di
 We implemented minisplice that learns splice signals with one-dimensional convolutional neural network (1D-CNN)
 and estimates the empirical splicing probability for every {\tt GT} and {\tt AG} sites in the genome.
 We modified minimap2 and miniprot to take advantage of pre-computed splicing probability during alignment.
-Evaluating on human long-read RNA-seq data and cross-species protein datasets,
-we show this strategy can greatly improve the junction accuracy especially for noisy long reads
+We trained a model for vetebrates and insect.
+Applied to human long-read RNA-seq data and cross-species protein datasets,
+the model greatly improves the junction accuracy especially for noisy long reads
 or proteins of distant homology.
 \vspace{0.5em}\\
 \textbf{Availability and implementation:}
@@ -56,7 +57,7 @@ or proteins of distant homology.
 
 \section{Introduction}
 
-RNA splicing is the process of removing introns from precursor messenger RNAs (pre-mRNAs).
+RNA splicing is the process of removing introns from precursor mRNAs (pre-mRNAs).
 It is widespread in eukaryotic genomes~\citep{Keren:2010aa}.
 %The 5'-end of an intron is called a \emph{donor} site
 %and the 3'-end called an \emph{acceptor} site.
@@ -101,7 +102,7 @@ or model regulatory motifs that do not have fixed positions.
 Many models have been developed to overcome the limitation of PWM~\citep{Capitanchik:2025aa}.
 In recent years, deep learning is gaining attraction
 and has been shown to outperform traditional methods~\citep{Zhang:2018aa,DBLP:journals/access/DuYDZZL18,Albaradei:2020aa}.
-Early deep learning models are small~\citep{Zabardast:2023aa} with only a few 1D-CNN layers.
+Early deep learning models are small with only a few 1D-CNN layers.
 Later models are larger, composed of residual blocks~\citep{Jaganathan:2019aa,Zeng:2022aa,Xu:2024aa,Chao:2024aa} or transformer blocks~\citep{You:2024aa,Chen:2024aa}.
 It is also possible to fine tune genomic large-language models for splice site prediction~\citep{Nguyen:2023aa,Dalla-Torre:2025aa,Brixi2025.02.18.638918}.
 Developed for general purposes, large-language models are computationally demanding and may be overkilling if we just use them to predict splice sites.
@@ -123,8 +124,217 @@ but have not been integrated into spliced aligners.
 In this article, we introduce minisplice, a command-line tool implemented in C,
 that learns splice signals and scores candidate splice sites with a small 1D-CNN model with 35 thousand parameters.
 We have modified minimap2 and miniprot to take the splice scores as input for improved spliced alignment.
-Importantly, we aim to develop a small model that is more capable than PWM and is still easy to deploy;
+Importantly, we aim to develop a simple model that is more capable than PWM and is still easy to deploy;
 we do not intend to compete with the best splice models which are orders of magnitude larger.
+
+\section{Methods}
+
+\begin{figure}[b]
+\includegraphics[width=.48\textwidth]{fig2}
+\caption{Method overview. {\bf (a)} Overall workflow.
+Training and prediction are done by minisplice.
+Alignment is done by minimap2 or miniprot.
+{\bf (b)} Default model architecture and parameterization.
+Shaded boxes contain free parameters.}\label{fig:wf}
+\end{figure}
+
+Our overall workflow consists of three steps: training, prediction and alignment (Fig.~\ref{fig:wf}a).
+First, we train a deep learning model and transform scores outputted by the model
+to empirical probabilities using known gene annotation.
+Second, given a target genome mRNA or protein sequences are aligned to,
+we predict the empirical probability of splice sites at each {\tt GT} or {\tt AG} in the genome
+and output the logarithm-scaled splice scores to a file.
+Third, when aligning mRNA sequences with minimap2~\citep{Li:2018ab} or aligning protein sequences with miniprot~\citep{Li:2023ab},
+we feed the precomputed splice scores to the aligners which use the scores during dynamic-programming-based residue alignment.
+This procedure will improve the accuracy around splice sites.
+As we will show later, we can merge the training data from several vertebrates and insect
+to obtain a model working well in large phylogenetic clades.
+We do not need to apply training often.
+
+\subsection{Generating training data}
+
+Consistent with the literature, we call the 5'-end of an intron as the \emph{donor} site
+and 3'-end as the \emph{acceptor} site.
+Minisplice takes the genome sequence in the FASTA format
+and gene annotation in the 12-column BED format (BED12) as input.
+It provides a script to convert annotation in GTF or GFF3 format to BED12.
+To generate training data, minisplice inspects each annotated donor site and labels it as a positive site if its sequence is {\tt GT};
+similarly, minisplice labels a positive acceptor if it is an annotated {\tt AG}.
+We ignore donor sites without {\tt GT} or acceptor sites without {\tt AG}
+because other types of splice sites are rare~\citep{Sibley:2016vh}.
+The alignment step still considers rarer {\tt GC..AG} or {\tt AT..AC} splicing.
+
+Due to potentially incomplete gene annotation in non-model organisms,
+a {\tt GT} dinucleotide could be a real unannotated donor site.
+To alleviate this issue, we label an unannotated {\tt GT} as a negative donor site
+only if it comes from the opposite strand of an annotated gene~\citep{Chao:2024aa}.
+In the rare case when two genes on opposite strands overlap with each other,
+we ignore the overlapping region.
+To balance positive and negative sites,
+we downsample negative sites such that the positive-to-negative ratio is 1:3.
+For each positive or negative donor site,
+we extract 100bp immediately before and after {\tt GT}.
+The total length of sequences used for training is thus 202bp.
+Negative acceptor sites are generated similarly.
+
+\subsection{Model architecture}
+
+Minisplice uses a model with two 1D-CNN layers (Fig.~\ref{fig:wf}b).
+The architecture is common among small models for splice site prediction~\citep{Zabardast:2023aa}.
+The default model uses 16 features at both CNN layers and has 34,978 free parameters in total (sum of numbers in shaded boxes).
+We briefly evaluated alternative models, for example with different kernel sizes, more CNN or dense layers, more dropout layers or more parameters.
+We observed comparable validation cost with similar number of parameters.
+We chose a relatively small model in the end because it is more efficient to apply.
+
+\subsection{Training and testing}
+
+We use 80\% of genes on the odd chromosomes or contigs for training and reserve the rest 20\% for validation.
+Recall that we intend to predict splice sites across the whole genome
+but when generating training data, we downsample negative {\tt GT}/{\tt AG} to a small fraction.
+To test the model accuracy in a setting closer to the prediction task,
+we apply the trained model to every {\tt GT}/{\tt AG} on the even chromosomes or contigs
+and compare the prediction to the known gene annotation.
+In comparision to training data, testing data is more correlated with the quality of known gene annotation:
+missing junctions in the annotation would appear to be false positives (FPs),
+while falsely annotated junctions would look false negatives (FNs).
+Testing accuracy is a potential indicator of gene annotation quality.
+
+\subsection{Transforming raw model scores to proabilities}
+
+With the `softmax' operator at the end,
+the model scores each candidate splice site with a number between 0 and 1, the higher the better.
+This score is not probability in particular when the property of the training data
+is distinct from our intended application.
+We need to transform this score to probability to work with the probability-based scoring system of miniprot.
+
+We evenly divide raw model scores into $b$ bins (50 by default).
+Raw score $t\in[0,1)$ would be assigned to bin $i=\lfloor tb\rfloor$.
+Let $P_i$ be the number of annotated splice sites scored to bin $i$, $i=0,1,\ldots,b-1$,
+and $N_i$ be the number of unannotated {\tt GT}/{\tt AG} sites scored to bin $i$.
+$P_i/(P_i+N_i)$ is the empirical probability of a candidate site in bin $i$ being real.
+Let $P=\sum_i P_i$ and $N=\sum_i N_i$.
+Given raw score $t$, the transformed score is
+\begin{equation}\label{eq:s}
+s(t)\triangleq 2\log_2\left(\frac{P_{\lfloor tb\rfloor}}{P_{\lfloor tb\rfloor}+N_{\lfloor tb\rfloor}}\cdot\frac{P+N}{P}\right)
+\end{equation}
+It computes the log odds of the probability estimiated with the deep learning model
+versus with the null model that assumes every {\tt GT}/{\tt AG} having equal probability of being real.
+The $2\log_2$ scaling comes from BLOSUM scoring matrices~\citep{Henikoff:1992tk} which miniprot uses.
+
+\subsection{Aligner integration}
+
+Minimap2~\citep{Li:2018ab} uses the following equation for spliced alignment:
+\begin{equation}\label{eq:splice}
+\left\{\begin{array}{l}
+H_{ij} = \max\{H_{i-1,j-1}+s(i,j),E_{ij},F_{ij},\tilde{E}_{ij}-a(i)\}\\
+E_{i+1,j}= \max\{H_{ij}-q,E_{ij}\}-e\\
+F_{i,j+1}= \max\{H_{ij}-q,F_{ij}\}-e\\
+\tilde{E}_{i+1,j}= \max\{H_{ij}-d(i)-\tilde{q},\tilde{E}_{ij}\}\\
+\end{array}\right.
+\end{equation}
+where $q$ is the gap open penalty, $e$ the gap extension penalty
+and $s(i,j)$ gives the substitution score between the $i$-th position
+on the reference and the $j$-th position on the query sequence.
+$d(i)$ and $a(i)$ are the donor and acceptor scores, respectively, calculated with Eq.~(\ref{eq:s}).
+Miniprot~\citep{Li:2023ab} uses a more complex equation which has the same donor and acceptor score functions.
+
+\subsection{Implementation}
+
+Minisplice is implemented in the C programming language with the only dependency
+being zlib for reading compressed files.
+It uses a deep-learning library we developed earlier for identifying human centromeric repeats~\citep{Li:2019aa}.
+Minisplice outputs splice scores in a TAB-delimited format like:
+\begin{verbatim}
+chr2   4184146   +   A   9
+chr2   4184167   +   A   -5
+chr2   4184191   -   D   5
+chr2   4184199   +   A   -5
+chr2   4184213   +   D   3
+chr2   4184219   -   A   1
+\end{verbatim}
+where the second column corresponds to the offset of the splice boundary
+and the last column gives the splice score.
+We modified minimap2 and miniprot to optionally take such a file as input
+and use the splice scores during residue alignment.
+Notably, minimap2 and miniprot do not directly depend on minisplice.
+Users can provide splice scores estimated by other means in principle.
+
+%The purple line in Fig.~\ref{fig:3} shows $s(t)$ estimated from data;
+%the green line corresponds to $2\log_2\left[t\cdot(P+N)/P\right]$
+%which is the score assuming raw score $t$ is a proper probability.
+%
+%\begin{figure}[tb]
+%\centering
+%\includegraphics[width=.4\textwidth]{fig3}
+%\caption{Transformed splice score as a function of raw model score.
+%0.0014 is the fraction of annotated splice sites out of all {\tt GT}/{\tt AG}
+%genome-wide.}\label{fig:3}
+%\end{figure}
+
+\section{Results}
+
+To find a small model that is generalized to multiple species and is fast to deploy,
+we experiemented models under a variety of settings.
+Our final model is trained from six insect in five orders and seven vertebrates.
+
+\begin{table}[!tb]
+\caption{Datasets\label{tab:data}}
+\begin{tabular*}{\columnwidth}{@{\extracolsep\fill}lll@{\extracolsep\fill}}
+\toprule
+Label & Species & Accession \\
+\midrule
+human*         & \emph{Homo sapiens}               & GCA\_000001405.29 \\
+mouse*\dag     & \emph{Mus musculus}               & GCA\_000001635.9 \\
+chicken*\dag   & \emph{Gallus gallus}              & GCA\_016699485.1 \\
+zebrafish*\dag & \emph{Danio rerio}                & GCA\_000002035.4 \\
+fruitfly*\dag  & \emph{Drosophila melanogaster}    & GCA\_000001215.4 \\
+mosquito*      & \emph{Anopheles gambiae}          & GCA\_943734735.2 \\
+mCanLup\dag    & \emph{Canis lupus baileyi}        & GCF\_048164855.1 \\
+mLagAlb\dag    & \emph{Lagenorhynchus albirostris} & GCF\_949774975.1 \\
+bAccGen\dag    & \emph{Astur gentilis}             & GCF\_929443795.1 \\
+bAnaAcu        & \emph{Anas acuta}                 & GCF\_963932015.1 \\
+aDenEbr        & \emph{Dendropsophus ebraccatus}   & GCF\_027789765.1 \\
+fCarCar\dag    & \emph{Carassius carassius}        & GCF\_963082965.1 \\
+fPunPun        & \emph{Pungitius pungitius}        & GCF\_949316345.1 \\
+sMobHyp        & \emph{Mobula hypostoma}           & GCF\_963921235.1 \\
+icTenMoli\dag  & \emph{Tenebrio molitor}           & GCF\_963966145.1 \\
+idCalVici\dag  & \emph{Calliphora vicina}          & GCF\_958450345.1 \\
+idStoCalc      & \emph{Stomoxys calcitrans}        & GCF\_963082655.1 \\
+ihPlaCitr\dag  & \emph{Planococcus citri}          & GCF\_950023065.1 \\
+ilCydFagi\dag  & \emph{Cydia fagiglandana}         & GCF\_963556715.1 \\
+ilOstNubi      & \emph{Ostrinia nubilalis}         & GCF\_963855985.1 \\
+iyBomTerr\dag  & \emph{Bombus terrestris}          & GCF\_910591885.1 \\
+iyVesCrab      & \emph{Vespa crabro}               & GCF\_910589235.1 \\
+\botrule
+\end{tabular*}
+\begin{tablenotes}\setlength\itemsep{0.0em}
+Ensembl or Gencode annotations were used for model organisms (marked by ``*'');
+RefSeq annotations for non-model organisms whose labels
+follow the naming standard developed by the Darwin Tree of Life Project:
+prefix ``m'' stands for mammals,
+``b'' for birds,
+``a'' for \emph{Amphibia} (e.g. frogs and newts),
+``f'' for fish,
+``s'' for sharks,
+``ic'' for order \emph{Coleoptera} (beetles),
+``id'' for \emph{Diptera} (flies),
+``ih'' for \emph{Hemiptera} (true bugs),
+``il'' for \emph{Lepidoptera} (butterflies and moths),
+``iy'' for \emph{Hymenoptera} (bees and ants).
+Species marked by ``\dag'' are used for training cross-species models.
+\end{tablenotes}
+\end{table}
+
+\subsection{Datasets}
+
+We acquired the genome sequences and gene annotations for six model organisms and 16 non-model organisms (Table~\ref{tab:data}).
+For model organisms, only chicken is annotated with the Ensembl pipeline;
+others are annotated by third parties.
+For non-model organisms, we intentionally chose species that have PacBio HiFi assemblies
+and are annotated by both RefSeq and Ensembl if possible.
+Only aDenEbr and sMobHyp do not have Ensembl annotations.
+
+\subsection{Effect of human gene annotations}
 
 \section*{Acknowledgments}
 
