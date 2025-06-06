@@ -273,9 +273,12 @@ Users can provide splice scores estimated by other means in principle.
 
 \section{Results}
 
+We evaluated the accuracy of trained models using Receiver Operating Characteristic (ROC) curves
+where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
 To find a small model that is generalized to multiple species and is fast to deploy,
 we experiemented models under a variety of settings.
-Our final model is trained from six insect in five orders and seven vertebrates.
+Our final model is trained on six insect from five orders and seven vertebrates.
+We did not train a plant model because we are less familiar with the plant phylogeny.
 
 \begin{table}[!tb]
 \caption{Datasets\label{tab:data}}
@@ -283,32 +286,32 @@ Our final model is trained from six insect in five orders and seven vertebrates.
 \toprule
 Label & Species & Accession \\
 \midrule
-human*         & \emph{Homo sapiens}               & GCA\_000001405.29 \\
-mouse*\dag     & \emph{Mus musculus}               & GCA\_000001635.9 \\
-chicken*\dag   & \emph{Gallus gallus}              & GCA\_016699485.1 \\
-zebrafish*\dag & \emph{Danio rerio}                & GCA\_000002035.4 \\
-fruitfly*\dag  & \emph{Drosophila melanogaster}    & GCA\_000001215.4 \\
-mosquito*      & \emph{Anopheles gambiae}          & GCA\_943734735.2 \\
-mCanLup\dag    & \emph{Canis lupus baileyi}        & GCF\_048164855.1 \\
-mLagAlb\dag    & \emph{Lagenorhynchus albirostris} & GCF\_949774975.1 \\
-bAccGen\dag    & \emph{Astur gentilis}             & GCF\_929443795.1 \\
+human\dag      & \emph{Homo sapiens}               & GCA\_000001405.29 \\
+mouse\dag*     & \emph{Mus musculus}               & GCA\_000001635.9 \\
+chicken\dag*   & \emph{Gallus gallus}              & GCA\_016699485.1 \\
+zebrafish\dag* & \emph{Danio rerio}                & GCA\_000002035.4 \\
+fruitfly\dag*  & \emph{Drosophila melanogaster}    & GCA\_000001215.4 \\
+mosquito\dag   & \emph{Anopheles gambiae}          & GCA\_943734735.2 \\
+mCanLup*       & \emph{Canis lupus baileyi}        & GCF\_048164855.1 \\
+mLagAlb*       & \emph{Lagenorhynchus albirostris} & GCF\_949774975.1 \\
+bAccGen*       & \emph{Astur gentilis}             & GCF\_929443795.1 \\
 bAnaAcu        & \emph{Anas acuta}                 & GCF\_963932015.1 \\
 aDenEbr        & \emph{Dendropsophus ebraccatus}   & GCF\_027789765.1 \\
-fCarCar\dag    & \emph{Carassius carassius}        & GCF\_963082965.1 \\
+fCarCar*       & \emph{Carassius carassius}        & GCF\_963082965.1 \\
 fPunPun        & \emph{Pungitius pungitius}        & GCF\_949316345.1 \\
 sMobHyp        & \emph{Mobula hypostoma}           & GCF\_963921235.1 \\
-icTenMoli\dag  & \emph{Tenebrio molitor}           & GCF\_963966145.1 \\
-idCalVici\dag  & \emph{Calliphora vicina}          & GCF\_958450345.1 \\
+icTenMoli*     & \emph{Tenebrio molitor}           & GCF\_963966145.1 \\
+idCalVici*     & \emph{Calliphora vicina}          & GCF\_958450345.1 \\
 idStoCalc      & \emph{Stomoxys calcitrans}        & GCF\_963082655.1 \\
-ihPlaCitr\dag  & \emph{Planococcus citri}          & GCF\_950023065.1 \\
-ilCydFagi\dag  & \emph{Cydia fagiglandana}         & GCF\_963556715.1 \\
+ihPlaCitr*     & \emph{Planococcus citri}          & GCF\_950023065.1 \\
+ilCydFagi*     & \emph{Cydia fagiglandana}         & GCF\_963556715.1 \\
 ilOstNubi      & \emph{Ostrinia nubilalis}         & GCF\_963855985.1 \\
-iyBomTerr\dag  & \emph{Bombus terrestris}          & GCF\_910591885.1 \\
+iyBomTerr*     & \emph{Bombus terrestris}          & GCF\_910591885.1 \\
 iyVesCrab      & \emph{Vespa crabro}               & GCF\_910589235.1 \\
 \botrule
 \end{tabular*}
 \begin{tablenotes}\setlength\itemsep{0.0em}
-Ensembl or Gencode annotations were used for model organisms (marked by ``*'');
+Ensembl or Gencode annotations were used for model organisms (marked by ``\dag'');
 RefSeq annotations for non-model organisms whose labels
 follow the naming standard developed by the Darwin Tree of Life Project:
 prefix ``m'' stands for mammals,
@@ -321,7 +324,7 @@ prefix ``m'' stands for mammals,
 ``ih'' for \emph{Hemiptera} (true bugs),
 ``il'' for \emph{Lepidoptera} (butterflies and moths),
 ``iy'' for \emph{Hymenoptera} (bees and ants).
-Species marked by ``\dag'' are used for training cross-species models.
+Species marked by ``*'' are used for training cross-species models.
 \end{tablenotes}
 \end{table}
 
@@ -334,7 +337,84 @@ For non-model organisms, we intentionally chose species that have PacBio HiFi as
 and are annotated by both RefSeq and Ensembl if possible.
 Only aDenEbr and sMobHyp do not have Ensembl annotations.
 
-\subsection{Effect of human gene annotations}
+\subsection{Intra-species training}
+
+Gencode provides a smaller set of ``basic'' gene annotations and a larger set of ``comprehensive'' annotations.
+We also have an option to select the longest transcript of each protein-coding gene for high-fidelity splice sites.
+We found training data has minor effect on testing accuracy (Fig.~\ref{fig:3}a)
+but annotations used for testing has a larger effect (Fig.~\ref{fig:3}b).
+We decided to train on splice sites from the longest protein-coding transcripts for training as they are most accurate,
+and to test on basic annotations because non-model organisms probably do not have annotations comparable to comprehensive Gencode anntations.
+
+\begin{figure}[tb]
+\includegraphics[width=.48\textwidth]{fig3}
+\caption{Intra-species training.
+{\bf (a)} Models trained on different human annotations
+and tested on the Gencode basic annotation.
+{\bf (b)} Model trained from the longest human protein-coding transcripts
+and tested on different human annotations.
+{\bf (c)} Donor-only training versus joint donor-acceptor training.
+{\bf (d)} Acceptor-only training versus joint donor-acceptor training.}\label{fig:3}
+\end{figure}
+
+The two central bases in donor training data are always {\tt GT}
+and the two bases in acceptor training data are always {\tt AG}.
+We speculated 1D-CNN models could easily learn the difference, so we mixed donor and acceptor training data
+and trained one joint model for each species.
+The joint models achieve nearly the same accuracy as separate donor or acceptor models (Fig.~\ref{fig:3}c,d).
+In later experiements, we thus always train one joint model to simplify the training process.
+
+\subsection{Cross-species training}
+
+Our end goal is to improve spliced alignment accuracy for species without known annotations.
+Training and prediction are often applied to different species.
+To test how well a model trained from one species can predict splice sites in a different species,
+we applied models trained from model organisms to human (Fig.~\ref{fig:4}a).
+We can see the test accuracy drops quickly with increased evolution distance.
+The mouse model is almost good as the human model because mammals are closely related.
+We also applied the mosquito model to the fruitfly genome (Fig.~\ref{fig:4}b).
+The test accuracy is lower than the accuracy we obtain with the fruitfly model,
+but the drop is much smaller in comparison to applying the mosquito model to human.
+These experiments suggested we can achieve reasonable accuracy with a model trained from a closely related species.
+
+\begin{figure}[bt]
+\includegraphics[width=.48\textwidth]{fig4}
+\caption{Cross-species training.
+{\bf (a)} Models trained from different species and tested on human.
+{\bf (b)} Intra- versus cross-species training with mosquito and fruitfly.}\label{fig:4}
+\end{figure}
+
+\begin{figure}[tb]
+\includegraphics[width=.48\textwidth]{fig5}
+\caption{Training from multiple species.
+{\bf (a)} Accuracy of model vi2 on vertebrate genomes. vi2 is trained from six verberate and seven insect genomes.
+{\bf (b)} Accuracy of vi2 on insect genomes. Odd chromosomes in starred species are used for training.
+Testing is applied to even chromosomes only.
+{\bf (c)} Comparison between vi2 and a model trained from verbebrate genomes (v2).
+{\bf (d)} Comparison between vi2 and a model trained from insect genomes (i2).}\label{fig:5}
+\end{figure}
+
+\begin{figure}[bt]
+\includegraphics[width=.48\textwidth]{fig6}
+\caption{Effect of window size.
+{\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT} or {\tt AG}) and 102bp.
+{\bf (b)} Comparison between 202bp and 302bp window sizes.}\label{fig:6}
+\end{figure}
+
+We went a step further by combining the training data across multiple vertebrate and insect species
+and derived model vi2, which was trained from six vertebrate and seven insect genomes marked in Table~\ref{tab:data}.
+Although this model is not as accurate as the model trained from individual species itself (Fig.~\ref{fig:5}a,b),
+it is better than applying an insect model to human (Fig.~\ref{fig:4}a).
+Note that vi2 is not trained on amphibian or shark genomes but it still accurately predicts splice sites in aDenEbr and sMobHyp.
+It is capturing common signals across large evolutionary distance while reducing overfitting to indivdual species.
+We also trained a vertebrate-only model (v2) and an insect-only model (i2).
+They outperformed vi2 for vertebrate and insect genomes, respectively (Fig.~\ref{fig:5}c,d),
+but we deemed the improvement is marginal and outweighed by the convenience
+of having one model across vertebrate and insect genomes.
+
+Model vi2 considers 202bp sequences around splice sites.
+We tried to reduce the window size to 102bp but the accuracy noticeably dropped (Fig.~\ref{fig:6}a).
+Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
 
 \section*{Acknowledgments}
 
