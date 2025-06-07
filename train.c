@@ -19,6 +19,19 @@ static kann_t *msp_model_gen(int n_out, int len, int k_size, int n_flt, int n_fc
 	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
 }
 
+static kann_t *msp_model_gen2(int n_out, int len, int k_size, int n_flt, int n_fc, float dropout)
+{
+	kad_node_t *t;
+	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
+	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
+	t = kad_max1d(t, 3, 3, 0);
+	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
+	t = kad_max1d(t, 3, 3, 0);
+	t = kad_tanh(t);
+	t = kad_relu(kann_layer_dense(t, n_fc));
+	return kann_new(kann_layer_cost(t, n_out, KANN_C_CEB), 0);
+}
+
 typedef struct {
 	int64_t n;
 	int32_t n_label, len;
@@ -69,14 +82,14 @@ int main_train(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
 	int c, k_size = 5, n_flt = 16, n_fc = 16, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
-	int max_drop_streak = 10, seed = 11, print_model = 0;
+	int max_drop_streak = 10, seed = 11, print_model = 0, use_alt = 0;
 	float lr = 0.001f, dropout = 0.0f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	char *fn_in = 0, *fn_out = 0;
 	kann_t *ann;
 
-	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:i:o:pF:", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "t:k:f:m:e:E:r:d:s:i:o:pF:a", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'k') k_size = atoi(o.arg);
 		else if (c == 'f') n_flt = atoi(o.arg);
@@ -90,6 +103,7 @@ int main_train(int argc, char *argv[])
 		else if (c == 'o') fn_out = o.arg;
 		else if (c == 'p') print_model = 1;
 		else if (c == 'e') min_epoch = atoi(o.arg);
+		else if (c == 'a') use_alt = 1;
 	}
 	if (argc - o.ind < 1) {
 		fprintf(stderr, "Usage: minisplice train [options] <in.data>\n");
@@ -128,7 +142,10 @@ int main_train(int argc, char *argv[])
 	msp_sdata_destroy(d);
 
 	if (fn_in) ann = kann_load(fn_in);
-	ann = msp_model_gen(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
+	if (use_alt)
+		ann = msp_model_gen2(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
+	else
+		ann = msp_model_gen(f->n_label, f->len, k_size, n_flt, n_fc, dropout);
 	assert(ann);
 
 	if (print_model) {
