@@ -10,6 +10,7 @@ static kann_t *msp_model_gen(int n_out, int len, int k_size, int n_flt, int n_fc
 	kad_node_t *t;
 	t = kad_feed(3, 1, 4, len), t->ext_flag |= KANN_F_IN;
 	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
+	t = kad_max1d(t, 3, 3, 0);
 	t = kad_relu(kann_layer_conv1d(t, n_flt, k_size, 1, 0));
 	if (dropout > 0.0f) t = kann_layer_dropout(t, dropout);
 	t = kad_max1d(t, 3, 3, 0);
@@ -67,9 +68,9 @@ static void msp_fdata_destroy(msp_fdata_t *f)
 int main_train(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int c, k_size = 5, n_flt = 16, n_fc = 32, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
+	int c, k_size = 5, n_flt = 16, n_fc = 16, min_epoch = 3, max_epoch = 100, mb_sz = 64, n_thread = 1;
 	int max_drop_streak = 10, seed = 11, print_model = 0;
-	float lr = 0.001f, dropout = 0.2f;
+	float lr = 0.001f, dropout = 0.0f;
 	msp_sdata_t *d;
 	msp_fdata_t *f;
 	char *fn_in = 0, *fn_out = 0;
@@ -97,7 +98,7 @@ int main_train(int argc, char *argv[])
 		fprintf(stderr, "    -k INT     1D-CNN kernel size [%d]\n", k_size);
 		fprintf(stderr, "    -f INT     number of features per 1D-CNN layer [%d]\n", n_flt);
 		fprintf(stderr, "    -F INT     number of neurons in the dense layer [%d]\n", n_fc);
-		fprintf(stderr, "    -d FLOAT   dropout (larger for smaller datasets) [%g]\n", dropout);
+		fprintf(stderr, "    -d FLOAT   dropout rate (use for large models) [%g]\n", dropout);
 		fprintf(stderr, "  Model training:\n");
 		fprintf(stderr, "    -r FLOAT   learning rate [%g]\n", lr);
 		fprintf(stderr, "    -e INT     min number of epoches [%d]\n", min_epoch);
