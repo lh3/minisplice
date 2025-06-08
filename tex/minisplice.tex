@@ -416,6 +416,25 @@ Model vi2 considers 202bp sequences around splice sites.
 We tried to reduce the window size to 102bp but the accuracy noticeably dropped (Fig.~\ref{fig:6}a).
 Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
 
+\begin{table*}[!tb]
+\caption{Effect on protein-to-genome alignment\label{tab:eval}}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}lllllllll@{\extracolsep\fill}}
+\toprule
+Genome species    & human     & human     & human      & human     & fruitfly & fruitfly & fruitfly   & fruitfly \\
+Query species     & zebrafish & zebrafish & zebrafish  & zebrafish & mosquito & mosquito & mosquito   & misquito \\
+Aligner           & miniprot  & miniprot  & miniprot   & Spaln3    & miniprot & miniprot & miniprot   & Spaln3 \\
+Splice model      & default   & -j2       & minisplice & Tetrapod  & default  & -j2      & minisplice & InsectDm \\
+\midrule
+\# prediced junc  & 164,094   & 160,935   & 164,860    & 144,544   & 28,780   & 27,307   & 28,722     & 24,538 \\
+\# annotated junc & 146,898   & 147,880   & 157,654    & 132,394   & 24,465   & 24,203   & 27,107     & 21,161 \\
+\% annotated junc & 89.52     & 91.89     & 95.63      & 91.59     & 85.01    & 88.63    & 94.38      & 86.24 \\
+\% Base Sn        & 60.12     & 60.04     & 60.85      & 51.71     & 56.89    & 56.73    & 57.25      & 44.51 \\
+\% Base Sp        & 95.49     & 96.09     & 97.30      & 94.37     & 98.65    & 98.64    & 99.27      & 97.37 \\
+\botrule
+\end{tabular*}
+\begin{tablenotes}\setlength\itemsep{0.0em}
+\end{tablenotes}
+\end{table*}
 \section*{Acknowledgments}
 
 \section*{Author contributions}
