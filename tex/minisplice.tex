@@ -417,24 +417,32 @@ We tried to reduce the window size to 102bp but the accuracy noticeably dropped 
 Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
 
 \begin{table*}[!tb]
-\caption{Effect on protein-to-genome alignment\label{tab:eval}}
-\begin{tabular*}{\textwidth}{@{\extracolsep\fill}lllllllll@{\extracolsep\fill}}
+\caption{Effect of splice site models on protein-to-genome alignment\label{tab:eval}}
+\begin{tabular*}{\textwidth}{@{\extracolsep\fill}llllllclllll@{\extracolsep\fill}}
 \toprule
-Genome species    & human     & human     & human      & human     & fruitfly & fruitfly & fruitfly   & fruitfly \\
-Query species     & zebrafish & zebrafish & zebrafish  & zebrafish & mosquito & mosquito & mosquito   & misquito \\
-Aligner           & miniprot  & miniprot  & miniprot   & Spaln3    & miniprot & miniprot & miniprot   & Spaln3 \\
-Splice model      & default   & -j2       & minisplice & Tetrapod  & default  & -j2      & minisplice & InsectDm \\
+& \multicolumn{5}{c}{zebrafish proteins to human genome} && \multicolumn{5}{c}{mosquito proteins to fruitfly genome} \\
+\cline{2-6}\cline{8-12}
+Aligner           & miniprot  & miniprot  & miniprot  & miniprot   & Spaln3    && miniprot & miniprot & miniprot & miniprot   & Spaln3 \\
+Splice model      & GT-AG     & default   & -j2       & minisplice & Tetrapod  && GT-AG    & default  & -j2      & minisplice & InsectDm \\
 \midrule
-\# prediced junc  & 164,094   & 160,935   & 164,860    & 144,544   & 28,780   & 27,307   & 28,722     & 24,538 \\
-\# annotated junc & 146,898   & 147,880   & 157,654    & 132,394   & 24,465   & 24,203   & 27,107     & 21,161 \\
-\% annotated junc & 89.52     & 91.89     & 95.63      & 91.59     & 85.01    & 88.63    & 94.38      & 86.24 \\
-\% Base Sn        & 60.12     & 60.04     & 60.85      & 51.71     & 56.89    & 56.73    & 57.25      & 44.51 \\
-\% Base Sp        & 95.49     & 96.09     & 97.30      & 94.37     & 98.65    & 98.64    & 99.27      & 97.37 \\
+\# prediced junc  & 168,030   & 164,094   & 160,935   & 164,860    & 144,544   && 30,279   & 28,780   & 27,307   & 28,722     & 24,538 \\
+\# annotated junc & 144,495   & 146,898   & 147,880   & 157,654    & 132,394   && 24,022   & 24,465   & 24,203   & 27,107     & 21,161 \\
+\% unannotated    & 14.01     & 10.48     & 8.11      & 4.37       & 8.41      && 20.68    & 14.99    & 11.37    & 5.62       & 13.76 \\
+\% Base Sn        & 60.09     & 60.12     & 60.04     & 60.85      & 51.71     && 57.00    & 56.92    & 56.76    & 57.28      & 44.53 \\
+\% Base Sp        & 94.33     & 95.49     & 96.09     & 97.30      & 94.37     && 98.39    & 98.65    & 98.64    & 99.28      & 97.37 \\
 \botrule
 \end{tabular*}
 \begin{tablenotes}\setlength\itemsep{0.0em}
+For the splice model, ``GT-AG'' only considers {\tt GT..AG},
+``default'' considers {\tt GTR..YAG},
+``-j2'' additionally considers {\tt G|GTR..YYYAG},
+and ``minisplice'' uses the ``vi2-7k'' model on top of ``-j2''.
+Miniprot was invoked with ``-I''.
+Splice3 was invoked with ``-LS -yS -yB -yZ -yX2''
+and with its own splice models.
 \end{tablenotes}
 \end{table*}
+
 \section*{Acknowledgments}
 
 \section*{Author contributions}
