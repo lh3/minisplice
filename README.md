@@ -72,9 +72,9 @@ but versions before v0.16 may lead to an assertion failure.
 
 The following command lines show how to train and calibrate a model for one genome:
 ```sh
-# convert gene annotation in GTF/GFF3 to BED12
-script/gff2bed.js -pl anno.gtf.gz | gzip > anno-long.bed.gz  # longest protein-coding only
-script/gff2bed.js anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
+# convert gene annotation in GTF/GFF3 to BED12; requiring https://github.com/lh3/minigff
+minigff.js all2bed -a1 anno.gtf.gz | gzip > anno-long.bed.gz  # longest protein-coding only
+minigff.js all2bed anno.gtf.gz | gzip > anno-all.bed.gz       # all annotation
 
 # generate training data
 ./minisplice gentrain anno-long.bed.gz genome-odd.fa.gz | gzip > train.txt.gz
