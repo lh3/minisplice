@@ -248,7 +248,7 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 					if (*q >= '0' && *q <= '9')
 						type = 0, label = atol(q); // 2-column
 					else type = 1; // 6-column
-				} else if (type == 1 && i == 2) {
+				} else if (type == 1 && i == 1) {
 					ctg = q;
 				} else if (type == 1 && i == 4) {
 					label = atol(q);
