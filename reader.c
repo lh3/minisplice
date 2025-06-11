@@ -237,7 +237,7 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 	ks = (kstream_t*)fp->fp;
 	d = MSP_CALLOC(msp_sdata_t, 1);
 	while ((ret = ks_getuntil(ks, KS_SEP_LINE, &str, 0)) >= 0) {
-		char *p, *q, *seq = 0;
+		char *p, *q, *seq = 0, *ctg = 0;
 		int32_t i, j, len = -1, type = -1;
 		int32_t label = -1;
 		for (p = q = str.s, i = 0;; ++p) {
@@ -248,6 +248,8 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 					if (*q >= '0' && *q <= '9')
 						type = 0, label = atol(q); // 2-column
 					else type = 1; // 6-column
+				} else if (type == 1 && i == 2) {
+					ctg = q;
 				} else if (type == 1 && i == 4) {
 					label = atol(q);
 				} else if ((type == 0 && i == 1) || (type == 1 && i == 5)) {
@@ -258,6 +260,7 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 			}
 		}
 		if (seq && label >= 0) {
+			int32_t l_ctg = 0;
 			msp_sdata1_t *r;
 			d->n_label = d->n_label > label + 1? d->n_label : label + 1;
 			if (d->len <= 0) d->len = len;
@@ -266,12 +269,15 @@ msp_sdata_t *msp_sdata_read(const char *fn)
 					fprintf(stderr, "[W::%s] training data contain sequences of different lengths: %d != %d\n", __func__, d->len, len);
 				continue;
 			}
+			if (ctg) l_ctg = strlen(ctg);
 			MSP_GROW(msp_sdata1_t, d->a, d->n, d->m);
 			r = &d->a[d->n++];
 			r->label = label;
-			r->seq = MSP_CALLOC(uint8_t, d->len);
+			r->seq = MSP_CALLOC(uint8_t, d->len + l_ctg + 1);
+			r->ctg = (char*)r->seq + d->len;
 			for (j = 0; j < d->len; ++j)
 				r->seq[j] = msp_nt6_table[(uint8_t)seq[j]] - 1;
+			if (ctg) memcpy(r->ctg, ctg, l_ctg + 1);
 		}
 	}
 	free(str.s);

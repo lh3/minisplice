@@ -214,7 +214,7 @@ typedef struct {
 	int32_t pt, pa, nt, na;
 } estat1_t;
 
-msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, float step)
+msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, float step, int print_adiff, int print_max1d)
 {
 	int32_t j, n_in, n_out, i_out, i_ins = -1, len_ins = 0; // i_ins: node of interest
 	int64_t i;
@@ -254,7 +254,7 @@ msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, fl
 			e->bin[b].mt++;
 			if (sd->a[i+j].label) e->bin[b].mp++;
 		}
-		if (v_ins) {
+		if ((print_adiff || print_max1d) && v_ins) {
 			int32_t B;
 			B = kad_sync_dim(ann->n, ann->v, -1);
 			kann_copy_mt(ann, B, i_ins);
@@ -266,11 +266,21 @@ msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, fl
 					else est[t].nt++, est[t].na += (p[t] > 0.0f);
 				}
 			}
+			if (print_max1d) {
+				for (j = 0; j < k; ++j) {
+					const float *p = &v_ins->x[j * len_ins];
+					int32_t t;
+					printf("MV\t%s", sd->a[i+j].ctg);
+					for (t = 0; t < len_ins; ++t)
+						printf("\t%g", p[t]);
+					printf("\n");
+				}
+			}
 		}
 	}
 	free(x1);
 	msp_eval_update(e);
-	if (v_ins) {
+	if (print_adiff && v_ins) {
 		kstring_t out = {0,0,0};
 		for (j = 0; j < v_ins->d[2]; ++j) {
 			char num[64];
@@ -321,14 +331,14 @@ void msp_eval_print(FILE *fp, const msp_eval_t *e)
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13, print_cali = 0;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13, print_cali = 0, print_max1d = 0;
 	kann_t *ann;
 	char *fn_bed = 0, *fn_cali = 0;
 	float step = 0.02f;
 	msp_file_t *fx = 0;
 	msp_sdata_t *sd = 0;
 
-	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:l:h:E", 0)) >= 0) {
+	while ((c = ketopt(&o, argc, argv, 1, "adt:b:e:m:s:rc:l:h:Ep", 0)) >= 0) {
 		if (c == 't') n_thread = atoi(o.arg);
 		else if (c == 'm') mb_sz = atoi(o.arg);
 		else if (c == 'd') type |= 1;
@@ -340,6 +350,7 @@ int main_predict(int argc, char *argv[])
 		else if (c == 'l') min_score = atoi(o.arg);
 		else if (c == 'h') max_score = atoi(o.arg);
 		else if (c == 'E') print_cali = 1;
+		else if (c == 'p') print_max1d = 1;
 	}
 	if (argc - o.ind < 2) {
 		fprintf(stderr, "Usage: minisplice predict [options] <in.kan> <in.fastx>|<train.txt>\n");
@@ -354,6 +365,7 @@ int main_predict(int argc, char *argv[])
 		fprintf(stderr, "    -c FILE     calibration data []\n");
 		fprintf(stderr, "    -l INT      min score [%d]\n", min_score);
 		fprintf(stderr, "    -h INT      max score [%d]\n", max_score);
+		fprintf(stderr, "    -p          print values at the last max1d layer\n");
 		fprintf(stderr, "  Calibration:\n");
 		fprintf(stderr, "    -b FILE     annotated splice sites in BED12 []\n");
 		fprintf(stderr, "    -s FLOAT    score bin size [%g]\n", step);
@@ -372,7 +384,7 @@ int main_predict(int argc, char *argv[])
 	if (fn_bed || train_fmt) { // for evaluation/calibration given fastx
 		msp_eval_t *e;
 		if (train_fmt) {
-			e = msp_eval_sdata(ann, sd, mb_sz, step);
+			e = msp_eval_sdata(ann, sd, mb_sz, step, 1, print_max1d);
 		} else {
 			msp_bed_t *bed;
 			bed = msp_bed_read(fn_bed);
