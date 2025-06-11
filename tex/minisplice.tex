@@ -398,7 +398,10 @@ Testing is applied to even chromosomes only.
 \includegraphics[width=.48\textwidth]{fig6}
 \caption{Effect of window size.
 {\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT} or {\tt AG}) and 102bp.
-{\bf (b)} Comparison between 202bp and 302bp window sizes.}\label{fig:6}
+{\bf (b)} Comparison between 202bp and 302bp window sizes.
+%{\bf (c)} Activation difference between positive and negative sites.
+%Larger values imply more signals around a position.
+}\label{fig:6}
 \end{figure}
 
 We went a step further by combining the training data across multiple vertebrate and insect species
@@ -415,6 +418,17 @@ of having one model across vertebrate and insect genomes.
 Model vi2 considers 202bp sequences around splice sites.
 We tried to reduce the window size to 102bp but the accuracy noticeably dropped (Fig.~\ref{fig:6}a).
 Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
+%We then studied differences between positive sites and negative sites at the last max-pooling layer.
+%Given one 302bp sequence, our model outputs a $16\times32$ tensor at the last max-pooling layer
+%where 16 is the number of channels and 32 roughly corresponds to positions on the sequence.
+%Given a 302bp sequence $x$, let $a_{ij}(x)$, $i=0,\ldots,15$ and $j=0,\ldots,31$, be a value at the max-pooling layer.
+%$a_{ij}(x)\ge0$ due to the ReLU layer ahead.
+%Let $m^+_{ij}\triangleq\sum_{x\in X^+}\text{sgn}(a_{ij}(x))/|X^+|$, where
+%$X^+$ is the set of positive training sequences and $\text{sgn}()$ is the sign function.
+%$m^+_{ij}$ is thus the activation frequency of ``neuron'' $(i,j)$ among positive sequences.
+%We can similarly define $m^-_{ij}$ for the negative activation frequency.
+%Finally, define $f_j\triangleq\sqrt{\sum_i(m^+_{ij}-m^-_{ij})^2/16}$.
+%It measures at approximate position $j$, 
 
 \begin{table*}[!tb]
 \caption{Effect of splice site models on protein-to-genome alignment\label{tab:eval}}
@@ -437,9 +451,8 @@ For the splice model, ``GT-AG'' only considers {\tt GT..AG},
 ``default'' considers {\tt GTR..YAG},
 ``-j2'' additionally considers {\tt G|GTR..YYYAG},
 and ``minisplice'' uses the ``vi2-7k'' model on top of ``-j2''.
-Miniprot was invoked with ``-I''.
-Splice3 was invoked with ``-LS -yS -yB -yZ -yX2''
-and with its own splice models.
+Miniprot was invoked with ``-I'' which sets the maximum intron length to $\min\{\max\{3.6\sqrt{G},10^4\},3\times10^5\}$, where $G$ is the genome size.
+Spaln3 was invoked with ``-LS -yS -yB -yZ -yX2'' and with its own splice models.
 \end{tablenotes}
 \end{table*}
 

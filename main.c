@@ -7,6 +7,7 @@
 int main_bed2bed(int argc, char *argv[]);
 int main_gentrain(int argc, char *argv[]);
 int main_train(int argc, char *argv[]);
+int main_inspect(int argc, char *argv[]);
 int main_predict(int argc, char *argv[]);
 
 static int usage(FILE *fp)
@@ -15,6 +16,7 @@ static int usage(FILE *fp)
 	fprintf(fp, "Commands:\n");
 	fprintf(fp, "  gentrain     generate training data\n");
 	fprintf(fp, "  train        model training\n");
+	fprintf(fp, "  inspect      print the model structure\n");
 	fprintf(fp, "  predict      predict splice sites\n");
 //	fprintf(fp, "  bed2bed      convert BED12 to BED6\n");
 	fprintf(fp, "  version      print the version number\n");
@@ -29,6 +31,7 @@ int main(int argc, char *argv[])
 	else if (strcmp(argv[1], "bed2bed") == 0) ret = main_bed2bed(argc-1, argv+1);
 	else if (strcmp(argv[1], "gentrain") == 0) ret = main_gentrain(argc-1, argv+1);
 	else if (strcmp(argv[1], "train") == 0) ret = main_train(argc-1, argv+1);
+	else if (strcmp(argv[1], "inspect") == 0) ret = main_inspect(argc-1, argv+1);
 	else if (strcmp(argv[1], "predict") == 0) ret = main_predict(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
