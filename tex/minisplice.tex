@@ -44,11 +44,11 @@ but current aligners use simple models, which may affect their accuracy given di
 We implemented minisplice to learn splice signals with one-dimensional convolutional neural network (1D-CNN)
 and trained a model with 7,026 parameters for vetebrates and insect.
 It captures conserved splice signals across phyla and reveals GC-rich introns specific to mammals and birds.
-We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} sites in genomes,
+We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} in genomes,
 and modified minimap2 and miniprot to leverage pre-computed splicing probability during alignment.
 Evaluated on human long-read RNA-seq data and cross-species protein datasets,
-our method greatly improves the junction accuracy for noisy long reads
-or proteins of distant homology.
+our method greatly improves the junction accuracy especially for noisy long RNA-seq reads
+and proteins of distant homology.
 \vspace{0.5em}\\
 \textbf{Availability and implementation:}
 \url{https://github.com/lh3/minisplice}
