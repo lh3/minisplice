@@ -19,8 +19,8 @@
 \appnotes{Preprint}
 \firstpage{1}
 
-\title[Improving spliced alignment]{Modeling splice sites with deep learning Improves spliced alignment}
-\author[1]{Siying Yang}
+\title[Improving spliced alignment]{Improving spliced alignment by modeling splice sites with deep learning}
+\author[1,2]{Siying Yang}
 \author[1,2]{Neng Huang}
 \author[1,2,3,$\ast$]{Heng Li\ORCID{0000-0003-4874-2874}}
 \address[1]{Department of Biomedical Informatics, Harvard Medical School, 10 Shattuck St, Boston, MA 02215, USA}
@@ -41,12 +41,13 @@ Accurate spliced alignment demands sophisticated modeling of splice sites,
 but current aligners use simple models, which may affect their accuracy given dissimilar sequences.
 \vspace{0.5em}\\
 \textbf{Results:}
-We implemented minisplice that learns splice signals with one-dimensional convolutional neural network (1D-CNN)
-and estimates the empirical splicing probability for every {\tt GT} and {\tt AG} sites in the genome.
-We modified minimap2 and miniprot to take advantage of pre-computed splicing probability during alignment.
-We trained a model for vetebrates and insect.
-Applied to human long-read RNA-seq data and cross-species protein datasets,
-the model greatly improves the junction accuracy especially for noisy long reads
+We implemented minisplice to learn splice signals with one-dimensional convolutional neural network (1D-CNN)
+and trained a model with 7,026 parameters for vetebrates and insect.
+It captures conserved splice signals across phyla and reveals GC-rich introns specific to mammals and birds.
+We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} sites in genomes,
+and modified minimap2 and miniprot to leverage pre-computed splicing probability during alignment.
+Evaluated on human long-read RNA-seq data and cross-species protein datasets,
+our method greatly improves the junction accuracy for noisy long reads
 or proteins of distant homology.
 \vspace{0.5em}\\
 \textbf{Availability and implementation:}
@@ -91,7 +92,7 @@ when aligners need to choose between multiple similarly scored alignments around
 
 \begin{figure}[b]
 \centering
-\includegraphics[width=.35\textwidth]{fig1}
+\includegraphics[width=.7\columnwidth]{fig1}
 \caption{Ambiguity in spliced alignment.
 The same genome-mRNA sequence pair can be aligned differently without mismatches or gaps.}\label{fig:1}
 \end{figure}
@@ -122,7 +123,7 @@ Deep learning models have been applied to refining splice sites as a post-proces
 but have not been integrated into spliced aligners.
 
 In this article, we introduce minisplice, a command-line tool implemented in C,
-that learns splice signals and scores candidate splice sites with a small 1D-CNN model with 35 thousand parameters.
+that learns splice signals and scores candidate splice sites with a small 1D-CNN model with 7,026 parameters.
 We have modified minimap2 and miniprot to take the splice scores as input for improved spliced alignment.
 Importantly, we aim to develop a simple model that is more capable than PWM and is still easy to deploy;
 we do not intend to compete with the best splice models which are orders of magnitude larger.
@@ -181,9 +182,9 @@ Negative acceptor sites are generated similarly.
 
 Minisplice uses a model with two 1D-CNN layers (Fig.~\ref{fig:wf}b).
 The architecture is common among small models for splice site prediction~\citep{Zabardast:2023aa}.
-The default model uses 16 features at both CNN layers and has 34,978 free parameters in total (sum of numbers in shaded boxes).
-We briefly evaluated alternative models, for example with different kernel sizes, more CNN or dense layers, more dropout layers or more parameters.
-We observed comparable validation cost with similar number of parameters.
+The default model uses 16 features at both CNN layers and has 7,026 free parameters in total (sum of numbers in shaded boxes).
+During development, we experimented alternative models,
+for example with different kernel sizes, more CNN or dense layers, optional dropout layers or more parameters.
 We chose a relatively small model in the end because it is more efficient to apply.
 
 \subsection{Training and testing}
@@ -258,18 +259,6 @@ We modified minimap2 and miniprot to optionally take such a file as input
 and use the splice scores during residue alignment.
 Notably, minimap2 and miniprot do not directly depend on minisplice.
 Users can provide splice scores estimated by other means in principle.
-
-%The purple line in Fig.~\ref{fig:3} shows $s(t)$ estimated from data;
-%the green line corresponds to $2\log_2\left[t\cdot(P+N)/P\right]$
-%which is the score assuming raw score $t$ is a proper probability.
-%
-%\begin{figure}[tb]
-%\centering
-%\includegraphics[width=.4\textwidth]{fig3}
-%\caption{Transformed splice score as a function of raw model score.
-%0.0014 is the fraction of annotated splice sites out of all {\tt GT}/{\tt AG}
-%genome-wide.}\label{fig:3}
-%\end{figure}
 
 \section{Results}
 
@@ -347,7 +336,7 @@ We decided to train on splice sites from the longest protein-coding transcripts 
 and to test on basic annotations because non-model organisms probably do not have annotations comparable to comprehensive Gencode anntations.
 
 \begin{figure}[tb]
-\includegraphics[width=.48\textwidth]{fig3}
+\includegraphics[width=\columnwidth]{fig3}
 \caption{Intra-species training.
 {\bf (a)} Models trained on different human annotations
 and tested on the Gencode basic annotation.
@@ -378,14 +367,14 @@ but the drop is much smaller in comparison to applying the mosquito model to hum
 These experiments suggested we can achieve reasonable accuracy with a model trained from a closely related species.
 
 \begin{figure}[bt]
-\includegraphics[width=.48\textwidth]{fig4}
+\includegraphics[width=\columnwidth]{fig4}
 \caption{Cross-species training.
 {\bf (a)} Models trained from different species and tested on human.
 {\bf (b)} Intra- versus cross-species training with mosquito and fruitfly.}\label{fig:4}
 \end{figure}
 
 \begin{figure}[tb]
-\includegraphics[width=.48\textwidth]{fig5}
+\includegraphics[width=\columnwidth]{fig5}
 \caption{Training from multiple species.
 {\bf (a)} Accuracy of model vi2 on vertebrate genomes. vi2 is trained from six verberate and seven insect genomes.
 {\bf (b)} Accuracy of vi2 on insect genomes. Odd chromosomes in starred species are used for training.
@@ -395,15 +384,15 @@ Testing is applied to even chromosomes only.
 \end{figure}
 
 \begin{figure}[bt]
-\includegraphics[width=.48\textwidth]{fig6}
+\includegraphics[width=\columnwidth]{fig6}
 \caption{Effect of window size.
 {\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT} or {\tt AG}) and 102bp.
 {\bf (b)} Comparison between 202bp and 302bp window sizes.
 {\bf (c)} Activation differences between positive and negative donor sites at the last max-pooling layer.
-When the window size is set to 302bp, this layer consists of $16\times32$ non-negative cells.
+With 302bp window, this layer consists of $16\times32$ non-negative cells due to the ReLU function.
 Given a set of sequences, the activation rate of a cell is the frequency of the cell being positive (i.e. non-zero).
 The heat shows the rate difference between positive and negative sets.
-Dark red indicates higher activation among positive donor sites; dark blue is the opposite.
+Dark red indicates more frequent activation among positive donor sites; dark blue is the opposite.
 {\bf (d)} Activation difference for acceptor sites.}\label{fig:6}
 \end{figure}
 
@@ -420,7 +409,7 @@ of having one model across vertebrate and insect genomes.
 
 \begin{figure}[bt]
 \includegraphics[width=.48\textwidth]{umap}
-\caption{UMAP with values at the last max-pooling layer.
+\caption{UMAP of the last max-pooling layer.
 Training data was downsampled to 20k splice sites with 10k positive and 10k negative sites.
 }\label{fig:umap}
 \end{figure}
@@ -445,9 +434,13 @@ We found most of the intron sequences close to the splice sites tend to be short
 We randomly selected five human genes with GC-rich donor sites, including \emph{GAPDH}, \emph{ARHGEF19}, \emph{ABTB2}, \emph{CCAR2} and \emph{OGDH},
 and aligned their protein sequences to the zebrafish genome.
 Except \emph{CCAR2} which was aligned with low identity at 33\%,
-other genes all reserved the GC-rich junctions, though the zebrafish introns had lower GC.
-\citet{Zhang:2011aa} also observed GC-rich introns in mammals
-and suggested they may help stabilize RNA secondary structure.
+other genes all reserved the GC-rich junctions, though the corresponding zebrafish junctions had lower GC.
+
+GC-rich introns are known to exist in human~\citep{Wang:2011aa}
+and may help stabilize RNA secondary structure~\citep{Zhang:2011aa}.
+Their specificity to mammals and birds might explain
+why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
+but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
 
 \subsection{Improving spliced alignment}
 
@@ -474,10 +467,75 @@ For the splice model, ``GT-AG'' only considers {\tt GT..AG},
 and ``minisplice'' uses the ``vi2-7k'' model on top of ``-j2''.
 Miniprot was invoked with ``-I'' which sets the maximum intron length to $\min\{\max\{3.6\sqrt{G},10^4\},3\times10^5\}$, where $G$ is the genome size.
 Spaln3 was invoked with ``-LS -yS -yB -yZ -yX2'' and with its own splice models.
+${\rm\%unannotated}=1-{\rm\#annotated}/{\rm\#predicted}$.
 \end{tablenotes}
 \end{table*}
 
+To evaluate the effect of splice models,
+we aligned zebrafish proteins to the human genome with miniprot (Table~\ref{tab:eval})
+and checked if an aligned junction is annotated in human.
+Unannotated junctions are likely errors in the protein-to-genome alignment.
+If we ask miniprot to only look for the minimal {\tt GT..AG} signal, 14.01\% of aligned junctions are not annotated in human.
+This percentage drops with improved splice models
+and reaches 4.37\% when minisplice scores are considered during alignment.
+The similar trend is also observed when aligning mosquito proteins to the fruitfly genome.
+This confirms the critical role of splice models in protein-to-genome alignment.
+
+We stratified the zebrafish proteins by their alignment identity (Fig.~\ref{fig:map}a)
+and inspected the alignment accuracy in each identity bin.
+The fraction of aligned junctions and the junction accuracy both drop with alignment identity (Fig.~\ref{fig:map}b,c).
+The minisplice model achieves higher accuracy across all bins, often halving the error rate in comparison to the default miniprot model.
+
+The minisplice model also greatly reduces the junction error rate for direct RNA-seq reads (Fig.~\ref{fig:map}d),
+though the reduction is less pronounced when the alignment identity reaches $>$98\%.
+For this RNA004 run~\citep{Zheng2024.11.17.624050}, 74.6\% of reads are mapped with identity $>$98\%.
+The overall junction error rate is marginally reduced from 1.4\% to 1.0\%.
+The effect of advanced splice models will be more noticeable for old data of lower quality, regions of high diversity or cross-species cDNA-to-genome alignment.
+
+\begin{figure}[bt]
+\includegraphics[width=\columnwidth]{fig8}
+\caption{Junction accuracy stratified by alignment identity.
+{\bf (a)} Number of zebrafish proteins in each identity bin.
+Identity is estimated from alignment of zebrafish proteins against the human genome under the default miniprot splice model.
+{\bf (b)} Number of aligned junctions divided by the number of coding junctions in the zebrafish annotation.
+{\bf (c)} Junction error rate of protein-to-genome alignment.
+{\bf (d)} Junction error rate of RNA-seq alignment.
+HG002 direct-RNA reads are aligned to the human genome with minimap2.}\label{fig:map}
+\end{figure}
+
+\section{Discussions}
+
+Minisplice is a command-line tool to learn splice signals with 1D-CNN
+and to predict the probability of splicing in the whole genome.
+While neural networks have long been applied to the modeling of splice sites~\citep{Reese:1997aa},
+minisplice represents the first effort to directly integrate deep learning into alignment algorithms.
+The integration substantially improves the splice junction accuracy of minimap2 and miniprot,
+and is likely to help downstream analyses such as transcriptome reconstruction and gene annotation.
+
+A marked limitation of minisplice is that it only models {\tt GT..AG} splice sites.
+Although miniprot considers {\tt GC..AG} and {\tt AT..AC} signals and minimap2 has recently adopted the same model,
+they may still prefer {\tt GT..AG} well scored by minisplice.
+In addition, minisplice predicts splice scores from the reference genome.
+It is not aware of mutations in other samples that may alter splice signals.
+This is a bias towards the reference genome and may lead to misalignment in rare cases.
+The bias is minor in comparison to annotation-guided alignment implemented in minimap2,
+which is biased towards both the reference genome and the reference annotation.
+
+Our final model with 7,026 parameters captures the conserved splice signals across vertebrate and insect genomes.
+The activation pattern at internal layers suggests that our model
+learns long-range composition of exonic sequences in addition to short-range signals around splice sites.
+For example, a site of interest is more likely to be a donor site if the sequence on its left is similar to exonic sequences in composition.
+Our small model probably cannot memorize splice regulatory motifs not well conserved over long evolutionary distance.
+With $\ge$10kb windows and orders of magnitude more parameters, recent deep learning models
+such as SpliceAI, Pangolin and DeltaSplice focus more on species-specific or even tissue-specific regulatory elements
+though their power might also partly come from learning nuances in exonic sequences.
+Notably, miniprot and minimap2 take splice scores as input but do not directly depend on minisplice.
+This design makes it possible to achieve even higher spliced alignment accuracy
+by computing scores with more advanced models in future.
+
 \section*{Acknowledgments}
+
+We thank Kuan-Hao Chao for pointing us to the Splam and OpenSpliceAI models prior to their publication.
 
 \section*{Author contributions}
 
