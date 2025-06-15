@@ -42,7 +42,7 @@ but current aligners use simple models, which may affect their accuracy given di
 \vspace{0.5em}\\
 \textbf{Results:}
 We implemented minisplice to learn splice signals with one-dimensional convolutional neural network (1D-CNN)
-and trained a model with 7,026 parameters for vertebrates and insect.
+and trained a model with 7,026 parameters for vertebrates and insect jointly.
 It captures conserved splice signals across phyla and reveals GC-rich introns specific to mammals and birds.
 We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} in genomes,
 and modified minimap2 and miniprot to leverage pre-computed splicing probability during alignment.
@@ -60,8 +60,6 @@ and proteins of distant homology.
 
 RNA splicing is the process of removing introns from precursor mRNAs (pre-mRNAs).
 It is widespread in eukaryotic genomes~\citep{Keren:2010aa}.
-%The 5'-end of an intron is called a \emph{donor} site
-%and the 3'-end called an \emph{acceptor} site.
 In human, for example, each protein-coding gene contains 9.4 introns on average;
 $>$98\% of introns start with {\tt GT} on the genome (or more precisely {\tt GU} on the pre-mRNA)
 and $>$99\% end with {\tt AG}~\citep{Sibley:2016vh}.
@@ -73,7 +71,7 @@ is challenging due to the low signal-to-noise ratio.
 
 To annotate splice sites and genes in a new genome,
 we can perform RNA sequencing (RNA-seq) and align mRNA sequences to the target genome.
-This approach does not work well for genes lowly expressed in tissues being sequenced.
+This approach does not work well for genes lowly expressed in sequenced tissues.
 A complement strategy is to align mRNA or protein sequences from other species to the target genome.
 Spliced alignment through introns is essential in both cases.
 
@@ -99,7 +97,7 @@ The same genome-mRNA sequence pair can be aligned differently without mismatches
 
 Position weight matrix (PWM) is a classical method for modeling splice signals~\citep{Staden:1984aa}.
 It however does not perform well because it cannot capture dependencies between positions~\citep{Burge:1997uu}
-or model regulatory motifs that do not have fixed positions.
+or model regulatory motifs such as branch points that do not have fixed positions.
 Many models have been developed to overcome the limitation of PWM~\citep{Capitanchik:2025aa}.
 In recent years, deep learning is gaining attraction
 and has been shown to outperform traditional methods~\citep{Zhang:2018aa,DBLP:journals/access/DuYDZZL18,Albaradei:2020aa}.
@@ -107,6 +105,11 @@ Early deep learning models are small with only a few 1D-CNN layers.
 Later models are larger, composed of residual blocks~\citep{Jaganathan:2019aa,Zeng:2022aa,Xu:2024aa,Chao:2024aa} or transformer blocks~\citep{You:2024aa,Chen:2024aa}.
 It is also possible to fine tune genomic large-language models for splice site prediction~\citep{Nguyen:2023aa,Dalla-Torre:2025aa,Brixi2025.02.18.638918}.
 Developed for general purposes, large-language models are computationally demanding and may be overkilling if we just use them to predict splice sites.
+
+At the same time, Helixer~\citep{Holst2023.02.06.527280} and Tiberius~\citep{Gabriel:2024aa}
+combined Hidden Markov Models (HMM) and deep-learning models for \emph{ab initio} gene prediction and achieved high accuracy.
+They however do not report alternative isoforms.
+Alignment-based methods remain the state of art for gene annotation.
 
 While qualified spliced aligners all look for the {\tt GT..AG} splice signal,
 they model additional flanking sequences differently.
@@ -123,14 +126,12 @@ Deep learning models have been applied to refining splice sites as a post-proces
 but have not been integrated into spliced aligners.
 
 In this article, we introduce minisplice, a command-line tool implemented in C,
-that learns splice signals and scores candidate splice sites with a small 1D-CNN model with 7,026 parameters.
+that learns splice signals and scores candidate splice sites with a small 1D-CNN model.
 We have modified minimap2 and miniprot to take the splice scores as input for improved spliced alignment.
 Importantly, we aim to develop a simple model that is more capable than PWM and is still easy to deploy;
 we do not intend to compete with the best splice models which are orders of magnitude larger.
 
-\section{Methods}
-
-\begin{figure}[b]
+\begin{figure}[tb]
 \includegraphics[width=.48\textwidth]{fig2}
 \caption{Method overview. {\bf (a)} Overall workflow.
 Training and prediction are done by minisplice.
@@ -139,18 +140,20 @@ Alignment is done by minimap2 or miniprot.
 Shaded boxes contain free parameters.}\label{fig:wf}
 \end{figure}
 
+\section{Methods}
+
 Our overall workflow consists of three steps: training, prediction and alignment (Fig.~\ref{fig:wf}a).
 First, we train a deep learning model and transform scores outputted by the model
 to empirical probabilities using known gene annotation.
-Second, given a target genome mRNA or protein sequences are aligned to,
+Second, given a target genome to which mRNA or protein sequences will be aligned,
 we predict the empirical probability of splice sites at each {\tt GT} or {\tt AG} in the genome
 and output the logarithm-scaled splice scores to a file.
 Third, when aligning mRNA sequences with minimap2~\citep{Li:2018ab} or aligning protein sequences with miniprot~\citep{Li:2023ab},
 we feed the precomputed splice scores to the aligners which use the scores during dynamic-programming-based residue alignment.
 This procedure will improve the accuracy around splice sites.
 As we will show later, we can merge the training data from several vertebrates and insect
-to obtain a model working well in large phylogenetic clades.
-We do not need to apply training often.
+to obtain a model working well across phyla.
+We do not need to train often.
 
 \subsection{Generating training data}
 
@@ -163,7 +166,7 @@ To generate training data, minisplice inspects each annotated donor site and lab
 similarly, minisplice labels a positive acceptor if it is an annotated {\tt AG}.
 We ignore donor sites without {\tt GT} or acceptor sites without {\tt AG}
 because other types of splice sites are rare~\citep{Sibley:2016vh}.
-The alignment step still considers rarer {\tt GC..AG} or {\tt AT..AC} splicing.
+Miniprot and minimap2 still consider rarer {\tt GC..AG} or {\tt AT..AC} at the alignment step.
 
 Due to potentially incomplete gene annotation in non-model organisms,
 a {\tt GT} dinucleotide could be a real unannotated donor site.
@@ -176,7 +179,7 @@ we downsample negative sites such that the positive-to-negative ratio is 1:3.
 For each positive or negative donor site,
 we extract 100bp immediately before and after {\tt GT}.
 The total length of sequences used for training is thus 202bp.
-Negative acceptor sites are generated similarly.
+Negative acceptor sequences are generated similarly.
 
 \subsection{Model architecture}
 
@@ -185,20 +188,21 @@ The architecture is common among small models for splice site prediction~\citep{
 The default model uses 16 features at both CNN layers and has 7,026 free parameters in total (sum of numbers in shaded boxes).
 During development, we experimented alternative models,
 for example with different kernel sizes, more CNN or dense layers, optional dropout layers or more parameters.
-We chose a relatively small model in the end because it is more efficient to apply.
+We chose a relatively small model in the end because it is more efficient to deploy.
 
 \subsection{Training and testing}
 
 We use 80\% of genes on the odd chromosomes or contigs for training and reserve the rest 20\% for validation.
+We stop training if the validation cost increases over several epochs.
 Recall that we intend to predict splice sites across the whole genome
 but when generating training data, we downsample negative {\tt GT}/{\tt AG} to a small fraction.
 To test the model accuracy in a setting closer to the prediction task,
 we apply the trained model to every {\tt GT}/{\tt AG} on the even chromosomes or contigs
-and compare the prediction to the known gene annotation.
-In comparison to training data, testing data is more correlated with the quality of known gene annotation:
+and compare the prediction to the known gene annotation to measure accuracy.
+In comparison to training data, testing data may contain errors in known gene annotation:
 missing junctions in the annotation would appear to be false positives (FPs),
 while falsely annotated junctions would look false negatives (FNs).
-Testing accuracy is a potential indicator of gene annotation quality.
+It is not straightforward to compare accuracy across species.
 
 \subsection{Transforming raw model scores to probabilities}
 
@@ -208,9 +212,9 @@ This score is not probability in particular when the property of the training da
 is distinct from our intended application.
 We need to transform this score to probability to work with the probability-based scoring system of miniprot.
 
-We evenly divide raw model scores into $b$ bins (50 by default).
-Raw score $t\in[0,1)$ would be assigned to bin $i=\lfloor tb\rfloor$.
-Let $P_i$ be the number of annotated splice sites scored to bin $i$, $i=0,1,\ldots,b-1$,
+We evenly divide raw model scores into $b$ bins (50 by default) such that
+raw score $t\in[0,1)$ is assigned to bin $i=\lfloor tb\rfloor$, $i=0,1,\ldots,b-1$.
+Let $P_i$ be the number of annotated splice sites scored to bin $i$
 and $N_i$ be the number of unannotated {\tt GT}/{\tt AG} sites scored to bin $i$.
 $P_i/(P_i+N_i)$ is the empirical probability of a candidate site in bin $i$ being real.
 Let $P=\sum_i P_i$ and $N=\sum_i N_i$.
@@ -220,7 +224,7 @@ s(t)\triangleq 2\log_2\left(\frac{P_{\lfloor tb\rfloor}}{P_{\lfloor tb\rfloor}+N
 \end{equation}
 It computes the log odds of the probability estimated with the deep learning model
 versus with the null model that assumes every {\tt GT}/{\tt AG} having equal probability of being real.
-The $2\log_2$ scaling comes from BLOSUM scoring matrices~\citep{Henikoff:1992tk} which miniprot uses.
+The $2\log_2$ scaling is imposed by BLOSUM scoring matrices~\citep{Henikoff:1992tk} which miniprot uses.
 
 \subsection{Aligner integration}
 
@@ -265,8 +269,8 @@ Users can provide splice scores estimated by other means in principle.
 We evaluated the accuracy of trained models using Receiver Operating Characteristic (ROC) curves
 where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
 To find a small model that is generalized to multiple species and is fast to deploy,
-we experimented models under a variety of settings.
-Our final model is trained on six insect from five orders and seven vertebrates.
+we experimented models under several settings.
+Our final model is trained on six insect genomes from five orders and seven vertebrate genomes.
 We did not train a plant model because we are less familiar with the plant phylogeny.
 
 \begin{table}[!tb]
@@ -301,7 +305,7 @@ iyVesCrab      & \emph{Vespa crabro}               & GCF\_910589235.1 \\
 \end{tabular*}
 \begin{tablenotes}\setlength\itemsep{0.0em}
 Ensembl or Gencode annotations were used for model organisms (marked by ``\dag'');
-RefSeq annotations for non-model organisms whose labels
+RefSeq annotations used for non-model organisms whose labels
 follow the naming standard developed by the Darwin Tree of Life Project:
 prefix ``m'' stands for mammals,
 ``b'' for birds,
@@ -350,8 +354,8 @@ The two central bases in donor training data are always {\tt GT}
 and the two bases in acceptor training data are always {\tt AG}.
 We speculated 1D-CNN models could easily learn the difference, so we mixed donor and acceptor training data
 and trained one joint model for each species.
-The joint models achieve nearly the same accuracy as separate donor or acceptor models (Fig.~\ref{fig:3}c,d).
-In later experiments, we thus always train one joint model to simplify the training process.
+The joint models achieved nearly the same accuracy as separate donor or acceptor models (Fig.~\ref{fig:3}c,d).
+In later experiments, we thus always trained one joint model to simplify the training process.
 
 \subsection{Cross-species training}
 
@@ -386,7 +390,7 @@ Testing is applied to even chromosomes only.
 \begin{figure}[bt]
 \includegraphics[width=\columnwidth]{fig6}
 \caption{Effect of window size.
-{\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT} or {\tt AG}) and 102bp.
+{\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT}/{\tt AG}) and 102bp.
 {\bf (b)} Comparison between 202bp and 302bp window sizes.
 {\bf (c)} Activation differences between positive and negative donor sites at the last max-pooling layer.
 With 302bp window, this layer consists of $16\times32$ cells which are non-negative due to the ReLU function.
@@ -398,7 +402,7 @@ Dark red indicates more frequent activation among positive donor sites; dark blu
 
 We went a step further by combining the training data across multiple vertebrate and insect species
 and derived model vi2, which was trained from six vertebrate and seven insect genomes marked in Table~\ref{tab:data}.
-Although this model is not as accurate as the model trained from individual species itself (Fig.~\ref{fig:5}a,b),
+Although this model is not as accurate as the species-specific model trained from individual species itself (Fig.~\ref{fig:5}a,b),
 it is better than applying an insect model to human (Fig.~\ref{fig:4}a).
 Note that vi2 is not trained on amphibian or shark genomes but it still accurately predicts splice sites in aDenEbr and sMobHyp.
 It is capturing common signals across large evolutionary distance while reducing overfitting to individual species.
@@ -417,14 +421,15 @@ Training data was downsampled to 20k splice sites with 10k positive and 10k nega
 Model vi2 considers 202bp sequences around splice sites.
 We tried to reduce the window size to 102bp but the accuracy noticeably dropped (Fig.~\ref{fig:6}a).
 Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
-
-To understand what signals the model is learning, we visualized the activation rates at the last max-pooling layer which consists of 16 features (Fig.~\ref{fig:6}c,d).
+To understand what signals the model is learning, we visualized the activation rates at the last max-pooling layer which has 16 features (Fig.~\ref{fig:6}c,d).
 While some features such as 4 and 7 focus on signals at splice sites,
 other features such as 2 and 13 likely capture compositions of introns and exons.
-The activation difference fades away beyond 100bp around splice sites especially in introns.
-This might explain why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
+Intronic sequences around acceptors appear to provide more signals than around donors.
+This might be related to branch points which are located within tens of basepairs upstream to acceptors.
+The activation difference fades away beyond 100bp around splice sites especially within introns.
+It might explain why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
 
-We further used the values at the last max-pooling layer to generate the UMAP of a subset of training samples (Fig.~\ref{fig:umap}).
+We further used the values at the last max-pooling layer to generate the UMAP of a random subset of training samples (Fig.~\ref{fig:umap}).
 The UMAP separates the training samples into three large clusters which correspond to
 positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, mammals and birds contain sites absent from fish and insect.
@@ -448,10 +453,10 @@ but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
 \caption{Effect of splice site models on protein-to-genome alignment\label{tab:eval}}
 \begin{tabular*}{\textwidth}{@{\extracolsep\fill}llllllclllll@{\extracolsep\fill}}
 \toprule
-& \multicolumn{5}{c}{zebrafish proteins to human genome} && \multicolumn{5}{c}{mosquito proteins to fruitfly genome} \\
-\cline{2-6}\cline{8-12}
+& \multicolumn{5}{c}{zebrafish proteins to human genome} && \multicolumn{5}{c}{mosquito proteins to fruitfly genome} \\[0.4em]
+\cline{2-6}\cline{8-12}\\[-0.9em]
 Aligner           & miniprot  & miniprot  & miniprot  & miniprot   & Spaln3    && miniprot & miniprot & miniprot & miniprot   & Spaln3 \\
-Splice model      & GT-AG     & default   & -j2       & minisplice & Tetrapod  && GT-AG    & default  & -j2      & minisplice & InsectDm \\
+Splice model      & GT-AG     & default   & extended  & minisplice & Tetrapod  && GT-AG    & default  & extended & minisplice & InsectDm \\
 \midrule
 \# prediced junc  & 168,030   & 164,094   & 160,935   & 164,860    & 144,544   && 30,279   & 28,780   & 27,307   & 28,722     & 24,538 \\
 \# annotated junc & 144,495   & 146,898   & 147,880   & 157,654    & 132,394   && 24,022   & 24,465   & 24,203   & 27,107     & 21,161 \\
@@ -463,10 +468,10 @@ Splice model      & GT-AG     & default   & -j2       & minisplice & Tetrapod  &
 \begin{tablenotes}\setlength\itemsep{0.0em}
 For the splice model, ``GT-AG'' only considers {\tt GT..AG},
 ``default'' considers {\tt GTR..YAG},
-``-j2'' additionally considers {\tt G|GTR..YYYAG},
-and ``minisplice'' uses the ``vi2-7k'' model on top of ``-j2''.
-Miniprot was invoked with ``-I'' which sets the maximum intron length to $\min\{\max\{3.6\sqrt{G},10^4\},3\times10^5\}$, where $G$ is the genome size.
-Spaln3 was invoked with ``-LS -yS -yB -yZ -yX2'' and with its own splice models.
+``extended'' additionally considers {\tt G|GTR..YYYAG},
+and ``minisplice'' uses the ``vi2-7k'' model on top of ``extended''.
+Miniprot was invoked with ``{\tt -I}'' which sets the maximum intron length to $\min\{\max\{3.6\sqrt{G},10^4\},3\times10^5\}$, where $G$ is the genome size.
+Spaln3 was invoked with ``{\tt -LS -yS -yB -yZ -yX2}'' and with its own splice models.
 ${\rm\%unannotated}=1-{\rm\#annotated}/{\rm\#predicted}$.
 \end{tablenotes}
 \end{table*}
@@ -488,7 +493,7 @@ The minisplice model achieves higher accuracy across all bins, often halving the
 
 The minisplice model also greatly reduces the junction error rate for direct RNA-seq reads (Fig.~\ref{fig:map}d),
 though the reduction is less pronounced when the alignment identity reaches $>$98\%.
-For this run with the latest the Nanopore RNA004 kit~\citep{Zheng2024.11.17.624050}, 74.6\% of reads are mapped with identity $>$98\%.
+For this RNA-seq run with the latest the Nanopore RNA004 kit~\citep{Zheng2024.11.17.624050}, 74.6\% of reads are mapped with identity $>$98\%.
 The overall junction error rate is marginally reduced from 1.4\% to 1.0\%.
 The advantage of advanced splice models will be more noticeable for old data of lower quality, regions of high diversity or cross-species cDNA-to-genome alignment.
 
@@ -514,24 +519,25 @@ and is likely to help downstream analyses such as transcriptome reconstruction a
 
 A marked limitation of minisplice is that it only models {\tt GT..AG} splice sites.
 Although miniprot considers {\tt GC..AG} and {\tt AT..AC} signals and minimap2 has recently adopted the same model,
-they may still prefer {\tt GT..AG} well scored by minisplice.
+they may still prefer {\tt GT..AG} well scored by minisplice and misalign introns with non-{\tt GT..AG} splicing.
 In addition, minisplice predicts splice scores from the reference genome.
 It is not aware of mutations in other samples that may alter splice signals.
-This is a bias towards the reference genome and may lead to misalignment in rare cases.
-The bias is minor in comparison to annotation-guided alignment implemented in minimap2,
+This bias towards the reference genome may lead to misalignment in rare cases
+but it is minor in comparison to annotation-guided alignment implemented in minimap2,
 which is biased towards both the reference genome and the reference annotation.
 
-Our final model with 7,026 parameters captures the conserved splice signals across vertebrate and insect genomes.
-The activation pattern at internal layers suggests that our model
-learns long-range composition of exonic sequences in addition to short-range signals around splice sites.
-For example, a site of interest is more likely to be a donor site if the sequence on its left is similar to exonic sequences in composition.
-Our small model probably cannot memorize splice regulatory motifs not well conserved over long evolutionary distance.
+If we could predict splice sites to 100\% accuracy, we would be close to solving the \emph{ab initio} gene finding problem.
+However, the conserved splice signals only come from several bases around splice sites.
+Given hundreds of millions of {\tt GT}/{\tt AG} in a mammalian genome, we would make many wrong predictions just based on the several bases.
+The activation pattern at an internal layer suggests our model
+draws power from long-range composition of exonic sequences in addition to short-range signals around splice sites.
+The model may tend to classify a site as donor if the sequence on the left is similar to exonic sequences in composition.
 With $\ge$10kb windows and orders of magnitude more parameters, recent deep learning models
-such as SpliceAI, Pangolin and DeltaSplice focus more on species-specific or even tissue-specific regulatory elements
-though their power might also partly come from learning nuances in exonic sequences.
-Notably, miniprot and minimap2 take splice scores as input but do not directly depend on minisplice.
-This design makes it possible to achieve even higher spliced alignment accuracy
-by computing scores with more advanced models in future.
+such as SpliceAI, Pangolin and DeltaSplice will learn composition better.
+They may additionally see the promoter regions of many genes and species- or even tissue-specific regulatory elements.
+It is not clear how much their signals come from splice sites.
+At this point, methods combining HMM and deep learning~\citep{Gabriel:2024aa,Holst2023.02.06.527280}
+may be more advantegeous for coding sequences as they explicitly keep protein sequences in phase.
 
 \section*{Acknowledgments}
 
