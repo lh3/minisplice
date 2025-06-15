@@ -42,7 +42,7 @@ but current aligners use simple models, which may affect their accuracy given di
 \vspace{0.5em}\\
 \textbf{Results:}
 We implemented minisplice to learn splice signals with one-dimensional convolutional neural network (1D-CNN)
-and trained a model with 7,026 parameters for vetebrates and insect.
+and trained a model with 7,026 parameters for vertebrates and insect.
 It captures conserved splice signals across phyla and reveals GC-rich introns specific to mammals and birds.
 We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} in genomes,
 and modified minimap2 and miniprot to leverage pre-computed splicing probability during alignment.
@@ -68,7 +68,7 @@ and $>$99\% end with {\tt AG}~\citep{Sibley:2016vh}.
 On the other hand, there are hundreds of millions of di-nucleotide {\tt GT} or {\tt AG}
 in the human genome.
 Only $\sim$0.1\% of them are real splice sites.
-Identifing real splice sites, which is required for gene annotaiton,
+Identifying real splice sites, which is required for gene annotation,
 is challenging due to the low signal-to-noise ratio.
 
 To annotate splice sites and genes in a new genome,
@@ -87,7 +87,7 @@ alignment (3) is more probable because it fits the splice consensus {\tt GTR..YA
 where ``{\tt R}'' stands for an {\tt A} or a {\tt G} base and ``{\tt Y}'' for {\tt C} or {\tt T}.
 In this toy example, the query sequence matches the reference perfectly in all three cases.
 On real data, spliced aligners may introduce extra mismatches and gaps to reach splice sites.
-The splice model has a major influence on the final alignment especially for diverged seuqences
+The splice model has a major influence on the final alignment especially for diverged seqeences
 when aligners need to choose between multiple similarly scored alignments around splice junctions.
 
 \begin{figure}[b]
@@ -195,12 +195,12 @@ but when generating training data, we downsample negative {\tt GT}/{\tt AG} to a
 To test the model accuracy in a setting closer to the prediction task,
 we apply the trained model to every {\tt GT}/{\tt AG} on the even chromosomes or contigs
 and compare the prediction to the known gene annotation.
-In comparision to training data, testing data is more correlated with the quality of known gene annotation:
+In comparison to training data, testing data is more correlated with the quality of known gene annotation:
 missing junctions in the annotation would appear to be false positives (FPs),
 while falsely annotated junctions would look false negatives (FNs).
 Testing accuracy is a potential indicator of gene annotation quality.
 
-\subsection{Transforming raw model scores to proabilities}
+\subsection{Transforming raw model scores to probabilities}
 
 With the `softmax' operator at the end,
 the model scores each candidate splice site with a number between 0 and 1, the higher the better.
@@ -218,7 +218,7 @@ Given raw score $t$, the transformed score is
 \begin{equation}\label{eq:s}
 s(t)\triangleq 2\log_2\left(\frac{P_{\lfloor tb\rfloor}}{P_{\lfloor tb\rfloor}+N_{\lfloor tb\rfloor}}\cdot\frac{P+N}{P}\right)
 \end{equation}
-It computes the log odds of the probability estimiated with the deep learning model
+It computes the log odds of the probability estimated with the deep learning model
 versus with the null model that assumes every {\tt GT}/{\tt AG} having equal probability of being real.
 The $2\log_2$ scaling comes from BLOSUM scoring matrices~\citep{Henikoff:1992tk} which miniprot uses.
 
@@ -265,7 +265,7 @@ Users can provide splice scores estimated by other means in principle.
 We evaluated the accuracy of trained models using Receiver Operating Characteristic (ROC) curves
 where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
 To find a small model that is generalized to multiple species and is fast to deploy,
-we experiemented models under a variety of settings.
+we experimented models under a variety of settings.
 Our final model is trained on six insect from five orders and seven vertebrates.
 We did not train a plant model because we are less familiar with the plant phylogeny.
 
@@ -333,7 +333,7 @@ We also have an option to select the longest transcript of each protein-coding g
 We found training data has minor effect on testing accuracy (Fig.~\ref{fig:3}a)
 but annotations used for testing has a larger effect (Fig.~\ref{fig:3}b).
 We decided to train on splice sites from the longest protein-coding transcripts for training as they are most accurate,
-and to test on basic annotations because non-model organisms probably do not have annotations comparable to comprehensive Gencode anntations.
+and to test on basic annotations because non-model organisms probably do not have annotations comparable to comprehensive Gencode annotations.
 
 \begin{figure}[tb]
 \includegraphics[width=\columnwidth]{fig3}
@@ -351,7 +351,7 @@ and the two bases in acceptor training data are always {\tt AG}.
 We speculated 1D-CNN models could easily learn the difference, so we mixed donor and acceptor training data
 and trained one joint model for each species.
 The joint models achieve nearly the same accuracy as separate donor or acceptor models (Fig.~\ref{fig:3}c,d).
-In later experiements, we thus always train one joint model to simplify the training process.
+In later experiments, we thus always train one joint model to simplify the training process.
 
 \subsection{Cross-species training}
 
@@ -376,10 +376,10 @@ These experiments suggested we can achieve reasonable accuracy with a model trai
 \begin{figure}[tb]
 \includegraphics[width=\columnwidth]{fig5}
 \caption{Training from multiple species.
-{\bf (a)} Accuracy of model vi2 on vertebrate genomes. vi2 is trained from six verberate and seven insect genomes.
+{\bf (a)} Accuracy of model vi2 on vertebrate genomes. vi2 is trained from six vertebrate and seven insect genomes.
 {\bf (b)} Accuracy of vi2 on insect genomes. Odd chromosomes in starred species are used for training.
 Testing is applied to even chromosomes only.
-{\bf (c)} Comparison between vi2 and a model trained from verbebrate genomes (v2).
+{\bf (c)} Comparison between vi2 and a model trained from vertebrate genomes (v2).
 {\bf (d)} Comparison between vi2 and a model trained from insect genomes (i2).}\label{fig:5}
 \end{figure}
 
@@ -389,7 +389,7 @@ Testing is applied to even chromosomes only.
 {\bf (a)} Comparison between the default 202bp window size ($\pm$100bp around {\tt GT} or {\tt AG}) and 102bp.
 {\bf (b)} Comparison between 202bp and 302bp window sizes.
 {\bf (c)} Activation differences between positive and negative donor sites at the last max-pooling layer.
-With 302bp window, this layer consists of $16\times32$ non-negative cells due to the ReLU function.
+With 302bp window, this layer consists of $16\times32$ cells which are non-negative due to the ReLU function.
 Given a set of sequences, the activation rate of a cell is the frequency of the cell being positive (i.e. non-zero).
 The heat shows the rate difference between positive and negative sets.
 Dark red indicates more frequent activation among positive donor sites; dark blue is the opposite.
@@ -401,7 +401,7 @@ and derived model vi2, which was trained from six vertebrate and seven insect ge
 Although this model is not as accurate as the model trained from individual species itself (Fig.~\ref{fig:5}a,b),
 it is better than applying an insect model to human (Fig.~\ref{fig:4}a).
 Note that vi2 is not trained on amphibian or shark genomes but it still accurately predicts splice sites in aDenEbr and sMobHyp.
-It is capturing common signals across large evolutionary distance while reducing overfitting to indivdual species.
+It is capturing common signals across large evolutionary distance while reducing overfitting to individual species.
 We also trained a vertebrate-only model (v2) and an insect-only model (i2).
 They outperformed vi2 for vertebrate and insect genomes, respectively (Fig.~\ref{fig:5}c,d),
 but we deemed the improvement is marginal and outweighed by the convenience
@@ -425,7 +425,7 @@ The activation difference fades away beyond 100bp around splice sites especially
 This might explain why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
 
 We further used the values at the last max-pooling layer to generate the UMAP of a subset of training samples (Fig.~\ref{fig:umap}).
-The UMAP separtes the training samples into three large clusters which correspond to
+The UMAP separates the training samples into three large clusters which correspond to
 positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, mammals and birds contain sites absent from fish and insect.
 The UMAP for human, zebrafish and fruitly reveals a similar pattern.
@@ -488,9 +488,9 @@ The minisplice model achieves higher accuracy across all bins, often halving the
 
 The minisplice model also greatly reduces the junction error rate for direct RNA-seq reads (Fig.~\ref{fig:map}d),
 though the reduction is less pronounced when the alignment identity reaches $>$98\%.
-For this RNA004 run~\citep{Zheng2024.11.17.624050}, 74.6\% of reads are mapped with identity $>$98\%.
+For this run with the latest the Nanopore RNA004 kit~\citep{Zheng2024.11.17.624050}, 74.6\% of reads are mapped with identity $>$98\%.
 The overall junction error rate is marginally reduced from 1.4\% to 1.0\%.
-The effect of advanced splice models will be more noticeable for old data of lower quality, regions of high diversity or cross-species cDNA-to-genome alignment.
+The advantage of advanced splice models will be more noticeable for old data of lower quality, regions of high diversity or cross-species cDNA-to-genome alignment.
 
 \begin{figure}[bt]
 \includegraphics[width=\columnwidth]{fig8}
