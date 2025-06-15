@@ -5,18 +5,18 @@ git clone https://github.com/lh3/minisplice
 cd minisplice && make
 
 # download vertebrate-insect pre-trained model and calibration data
-wget -O- https://zenodo.org/records/15513901/files/vi2-35k.tgz | tar zxf -
+wget -O- https://zenodo.org/records/15670304/files/vi2-7k.tgz | tar zxf -
 
 # compute the splice score for GT and AG sites; see below for model training
-./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
+./minisplice predict -t16 -c vi2-7k.kan.cali vi2-7k.kan genome.fa.gz > score.tsv
 
 # use splice scores (miniprot-v0.16+ or minimap2-r1285+)
 miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
 minimap2 -cxsplice:hq -t16 --spsc=score.tsv genome.fa.gz rna-seq.fq > align.paf
 
 # use pre-calculated human or Drosophila scores
-wget https://zenodo.org/records/15513901/files/human-GRCh38.vi2-35k.tsv.gz
-miniprot -Iut16 --gff -j2 --spsc human-GRCh38.vi2-35k.tsv.gz hg38.fa proteins.faa
+wget https://zenodo.org/records/15670304/files/human-GRCh38.vi2-7k.tsv.gz
+miniprot -Iut16 --gff -j2 --spsc human-GRCh38.vi2-7k.tsv.gz hg38.fa proteins.faa
 ```
 
 ## Introduction
@@ -39,9 +39,7 @@ position weight matrix.
 sequences around annotated and random GT- or -AG sites from the genome,
 calibrates the model output to empirical probability, and computes the
 odds-ratio score of each GT- or -AG in the genome. Training can be applied to
-multiple distantly related species. For example, **one** model trained from mouse,
-chicken, zebrafish, *Drosophila* (fruit fly) and *Anopheles* (mosquito) apparently
-works well for vertebrtes and insect.
+multiple distantly related species.
 
 ## Usage
 
@@ -49,9 +47,9 @@ works well for vertebrtes and insect.
 
 If your target genome is a vertebrate or insect, you can use pre-trained model:
 ```sh
-./minisplice predict -t16 -c vi2-35k.kan.cali vi2-35k.kan genome.fa.gz > score.tsv
+./minisplice predict -t16 -c vi2-7k.kan.cali vi2-7k.kan genome.fa.gz > score.tsv
 ```
-where `vi2-35k.kan` encodes the model and `vi2-35k.kan.cali` provides calibration data
+where `vi2-7k.kan` encodes the model and `vi2-7k.kan.cali` provides calibration data
 which is used to translate the model output to empirical probability. The
 output looks like:
 ```txt
