@@ -41,12 +41,12 @@ Accurate spliced alignment demands sophisticated modeling of splice sites,
 but current aligners use simple models, which may affect their accuracy given dissimilar sequences.
 \vspace{0.5em}\\
 \textbf{Results:}
-We implemented minisplice to learn splice signals with one-dimensional convolutional neural network (1D-CNN)
-and trained a model with 7,026 parameters for vertebrates and insect jointly.
+We implemented minisplice to learn splice signals with a one-dimensional convolutional neural network (1D-CNN)
+and trained a model with 7,026 parameters for vertebrate and insect genomes.
 It captures conserved splice signals across phyla and reveals GC-rich introns specific to mammals and birds.
 We used this model to estimate the empirical splicing probability for every {\tt GT} and {\tt AG} in genomes,
 and modified minimap2 and miniprot to leverage pre-computed splicing probability during alignment.
-Evaluated on human long-read RNA-seq data and cross-species protein datasets,
+Evaluation on human long-read RNA-seq data and cross-species protein datasets showed
 our method greatly improves the junction accuracy especially for noisy long RNA-seq reads
 and proteins of distant homology.
 \vspace{0.5em}\\
@@ -72,7 +72,7 @@ is challenging due to the low signal-to-noise ratio.
 To annotate splice sites and genes in a new genome,
 we can perform RNA sequencing (RNA-seq) and align mRNA sequences to the target genome.
 This approach does not work well for genes lowly expressed in sequenced tissues.
-A complement strategy is to align mRNA or protein sequences from other species to the target genome.
+A complementary strategy is to align mRNA or protein sequences from other species to the target genome.
 Spliced alignment through introns is essential in both cases.
 
 It is important to look for splice signals during spliced alignment
@@ -104,7 +104,7 @@ and has been shown to outperform traditional methods~\citep{Zhang:2018aa,DBLP:jo
 Early deep learning models are small with only a few 1D-CNN layers.
 Later models are larger, composed of residual blocks~\citep{Jaganathan:2019aa,Zeng:2022aa,Xu:2024aa,Chao:2024aa} or transformer blocks~\citep{You:2024aa,Chen:2024aa}.
 It is also possible to fine tune genomic large-language models for splice site prediction~\citep{Nguyen:2023aa,Dalla-Torre:2025aa,Brixi2025.02.18.638918}.
-Developed for general purposes, large-language models are computationally demanding and may be overkilling if we just use them to predict splice sites.
+Developed for general purposes, large-language models are computationally demanding and may be overkill if we just use them to predict splice sites.
 
 At the same time, Helixer~\citep{Holst2023.02.06.527280} and Tiberius~\citep{Gabriel:2024aa}
 combined Hidden Markov Models (HMM) and deep-learning models for \emph{ab initio} gene prediction and achieved high accuracy.
@@ -175,7 +175,7 @@ only if it comes from the opposite strand of an annotated gene~\citep{Chao:2024a
 In the rare case when two genes on opposite strands overlap with each other,
 we ignore the overlapping region.
 To balance positive and negative sites,
-we downsample negative sites such that the positive-to-negative ratio is 1:3.
+we randomly selsect a subset of negative sites such that the positive-to-negative ratio is 1:3.
 For each positive or negative donor site,
 we extract 100bp immediately before and after {\tt GT}.
 The total length of sequences used for training is thus 202bp.
@@ -208,7 +208,7 @@ It is not straightforward to compare accuracy across species.
 
 With the `softmax' operator at the end,
 the model scores each candidate splice site with a number between 0 and 1, the higher the better.
-This score is not probability in particular when the property of the training data
+This score is not a probability in particular when the property of the training data
 is distinct from our intended application.
 We need to transform this score to probability to work with the probability-based scoring system of miniprot.
 
@@ -334,8 +334,8 @@ Only aDenEbr and sMobHyp do not have Ensembl annotations.
 
 Gencode provides a smaller set of ``basic'' gene annotations and a larger set of ``comprehensive'' annotations.
 We also have an option to select the longest transcript of each protein-coding gene for high-fidelity splice sites.
-We found training data has minor effect on testing accuracy (Fig.~\ref{fig:3}a)
-but annotations used for testing has a larger effect (Fig.~\ref{fig:3}b).
+We found training data had minor effect on testing accuracy (Fig.~\ref{fig:3}a)
+but annotations used for testing had larger effect (Fig.~\ref{fig:3}b).
 We decided to train on splice sites from the longest protein-coding transcripts for training as they are most accurate,
 and to test on basic annotations because non-model organisms probably do not have annotations comparable to comprehensive Gencode annotations.
 
@@ -430,12 +430,12 @@ The activation difference fades away beyond 100bp around splice sites especially
 It might explain why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
 
 We further used the values at the last max-pooling layer to generate the UMAP of a random subset of training samples (Fig.~\ref{fig:umap}).
-The UMAP separates the training samples into three large clusters which correspond to
+The UMAP separated the training samples into three large clusters which correspond to
 positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, mammals and birds contain sites absent from fish and insect.
 The UMAP for human, zebrafish and fruitly reveals a similar pattern.
 We then extracted splice sites in the UMAP that are specific to human.
-We found most of the intron sequences close to the splice sites tend to be short and GC-rich.
+We found most of the intron sequences close to the splice sites tended to be short and GC-rich.
 We randomly selected five human genes with GC-rich donor sites, including \emph{GAPDH}, \emph{ARHGEF19}, \emph{ABTB2}, \emph{CCAR2} and \emph{OGDH},
 and aligned their protein sequences to the zebrafish genome.
 Except \emph{CCAR2} which was aligned with low identity at 33\%,
@@ -466,7 +466,7 @@ Splice model      & GT-AG     & default   & extended  & minisplice & Tetrapod  &
 \botrule
 \end{tabular*}
 \begin{tablenotes}\setlength\itemsep{0.0em}
-For the splice model, ``GT-AG'' only considers {\tt GT..AG},
+For the splice models, ``GT-AG'' only considers {\tt GT..AG},
 ``default'' considers {\tt GTR..YAG},
 ``extended'' additionally considers {\tt G|GTR..YYYAG},
 and ``minisplice'' uses the ``vi2-7k'' model on top of ``extended''.
@@ -537,7 +537,7 @@ such as SpliceAI, Pangolin and DeltaSplice will learn composition better.
 They may additionally see the promoter regions of many genes and species- or even tissue-specific regulatory elements.
 It is not clear how much their signals come from splice sites.
 At this point, methods combining HMM and deep learning~\citep{Gabriel:2024aa,Holst2023.02.06.527280}
-may be more advantegeous for coding sequences as they explicitly keep protein sequences in phase.
+may be more advantegeous for coding sequences as they explicitly model gene structures and keep protein sequences in phase.
 
 \section*{Acknowledgments}
 
