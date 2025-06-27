@@ -1,3 +1,6 @@
+[![](https://img.shields.io/badge/preprint-doi:10.48550/arXiv.2506.12986-blue)](https://doi.org/10.48550/arXiv.2506.12986)
+[![](https://img.shields.io/badge/resource-doi:10.5281/zenodo.15446314-blue)](https://doi.org/10.5281/zenodo.15446314)
+
 ## Getting Started
 ```sh
 # compile
@@ -100,6 +103,11 @@ Usually one genome provides enough training data. To save training time, you
 can subsample training data from each genome before combining them. If you
 subsample training data at different rates, it is recommended to provides the
 rates on the `merge-cali.js` command line.
+
+### Citing minisplice
+
+> Yang S, Huang N and Li H (2025) Improving spliced alignment by modeling splice sites with deep learning
+> arXiv:2506.12986. DOI:[10.48550/arXiv.2506.12986](https://doi.org/10.48550/arXiv.2506.12986)
 
 [mp]: https://github.com/lh3/miniprot
 [mm2]: https://github.com/lh3/minimap2
