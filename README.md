@@ -1,5 +1,5 @@
-[![](https://img.shields.io/badge/preprint-doi:10.48550/arXiv.2506.12986-blue)](https://doi.org/10.48550/arXiv.2506.12986)
-[![](https://img.shields.io/badge/resource-doi:10.5281/zenodo.15446314-blue)](https://doi.org/10.5281/zenodo.15446314)
+[![Preprint](https://img.shields.io/badge/preprint-10.48550/arXiv.2506.12986-blue)](https://doi.org/10.48550/arXiv.2506.12986)
+[![Resource](https://img.shields.io/badge/resource-10.5281/zenodo.15446314-blue)](https://doi.org/10.5281/zenodo.15446314)
 
 ## Getting Started
 ```sh
