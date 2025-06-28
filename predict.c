@@ -307,6 +307,17 @@ msp_eval_t *msp_eval_sdata(kann_t *ann, const msp_sdata_t *sd, int32_t mb_sz, fl
 	return e;
 }
 
+msp_eval_t *msp_eval_read_kan(const char *fn_kan)
+{
+	msp_eval_t *e;
+	char *fn_cali;
+	fn_cali = MSP_CALLOC(char, strlen(fn_kan) + 6);
+	strcat(strcpy(fn_cali, fn_kan), ".cali");
+	e = msp_eval_read(fn_cali);
+	free(fn_cali);
+	return e;
+}
+
 void msp_eval_print(FILE *fp, const msp_eval_t *e)
 {
 	int32_t i;
@@ -398,6 +409,7 @@ int main_predict(int argc, char *argv[])
 	} else { // for prediction
 		msp_eval_t *e = 0;
 		if (fn_cali) e = msp_eval_read(fn_cali);
+		else e = msp_eval_read_kan(argv[o.ind]);
 		if (e && print_cali)
 			msp_eval_print(stdout, e);
 		else
