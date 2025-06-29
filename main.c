@@ -9,6 +9,7 @@ int main_gentrain(int argc, char *argv[]);
 int main_train(int argc, char *argv[]);
 int main_inspect(int argc, char *argv[]);
 int main_predict(int argc, char *argv[]);
+int main_ism(int argc, char *argv[]);
 
 static int usage(FILE *fp)
 {
@@ -33,6 +34,7 @@ int main(int argc, char *argv[])
 	else if (strcmp(argv[1], "train") == 0) ret = main_train(argc-1, argv+1);
 	else if (strcmp(argv[1], "inspect") == 0) ret = main_inspect(argc-1, argv+1);
 	else if (strcmp(argv[1], "predict") == 0) ret = main_predict(argc-1, argv+1);
+	else if (strcmp(argv[1], "ism") == 0) ret = main_ism(argc-1, argv+1);
 	else if (strcmp(argv[1], "version") == 0) {
 		printf("%s\n", MSP_VERSION);
 		return 0;

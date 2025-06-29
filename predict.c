@@ -109,6 +109,7 @@ void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t
 				double f = t.a[i].f >= 0.0? t.a[i].f : 0.0;
 				int32_t b = (int32_t)(f / e->step);
 				if (b == 0) continue;
+				if (b >= e->n_bin) b = e->n_bin - 1;
 				spsc = e->bin[b].spsc > 0.0? (int32_t)(e->bin[b].spsc + .499) : (int32_t)(e->bin[b].spsc - .499);
 				if (spsc <= min_score) continue;
 				if (spsc > max_score) spsc = max_score;
@@ -420,5 +421,100 @@ int main_predict(int argc, char *argv[])
 	if (fx) msp_file_close(fx);
 	if (sd) msp_sdata_destroy(sd);
 	kann_delete(ann);
+	return 0;
+}
+
+typedef struct {
+	int32_t i, c;
+	float p;
+} ism_aux_t;
+
+void msp_ism_sdata(kann_t *ann, const msp_eval_t *e, const msp_sdata_t *sd)
+{
+	int32_t i, i_out, n_in, n_out, mb_sz;
+	float *x1;
+	double *ism_sc;
+	ism_aux_t *ia;
+
+	assert(sd->n_label == 2);
+	kann_switch(ann, 0);
+	i_out = kann_find(ann, KANN_F_OUT, 0);
+	n_in = kann_dim_in(ann);
+	assert(n_in == sd->len * 4);
+	n_out = kann_dim_out(ann);
+	mb_sz = sd->len * 3 + 1;
+	kann_set_batch_size(ann, mb_sz);
+	x1 = MSP_CALLOC(float, mb_sz * n_in);
+	kann_feed_bind(ann, KANN_F_IN, 0, &x1);
+	ia = MSP_CALLOC(ism_aux_t, mb_sz);
+	ism_sc = MSP_CALLOC(double, sd->len);
+
+	for (i = 0; i < sd->n; ++i) {
+		int32_t k = 0, j, c;
+		const float *y1;
+		msp_seq2vec(sd->len, sd->a[i].seq, x1);
+		ia[k].i = -1, ia[k++].c = -1;
+		for (j = 0, k = 1; j < sd->len; ++j) {
+			for (c = 0; c < 4; ++c) {
+				float *x1k = &x1[k * n_in];
+				if (c == sd->a[i].seq[j]) continue;
+				memcpy(x1k, x1, sd->len * 4 * sizeof(float));
+				x1k[sd->a[i].seq[j] * sd->len + j] = 0.0f;
+				x1k[c * sd->len + j] = 1.0f;
+				ia[k].i = j, ia[k++].c = c;
+			}
+		}
+		fprintf(stderr, "%d,%d\n", k, mb_sz);
+		assert(k == mb_sz);
+		kann_eval_out(ann);
+		y1 = ann->v[i_out]->x;
+		for (k = 0; k < mb_sz; ++k) {
+			double f = y1[k * n_out + 1];
+			int32_t b = (int32_t)(f / e->step);
+			assert(f >= 0.0);
+			if (b >= e->n_bin) b = e->n_bin - 1;
+			ia[k].p = e->bin[b].spsc;
+		}
+		for (j = 0; j < sd->len; ++j)
+			ism_sc[j] = -1e300;
+		for (k = 1; k < mb_sz; ++k)
+			if (ism_sc[ia[k].i] < ia[k].p)
+				ism_sc[ia[k].i] = ia[k].p;
+		for (j = 0; j < sd->len; ++j)
+			ism_sc[j] -= ia[0].p;
+		printf("ST\t%s\t%.2f\n", sd->a[i].ctg, ia[0].p);
+		for (j = 0; j < sd->len; ++j)
+			printf("IM\t%d\t%c\t%.2f\n", j, "ACGT"[sd->a[i].seq[j]], ism_sc[j]);
+		printf("//\n");
+	}
+	free(ism_sc);
+	free(ia);
+	free(x1);
+}
+
+int main_ism(int argc, char *argv[])
+{
+	ketopt_t o = KETOPT_INIT;
+	char *fn_cali = 0;
+	kann_t *ann;
+	msp_eval_t *e;
+	msp_sdata_t *sd = 0;
+	int32_t c;
+
+	while ((c = ketopt(&o, argc, argv, 1, "c:", 0)) >= 0) {
+		if (c == 'c') fn_cali = o.arg;
+	}
+	if (argc - o.ind < 2) {
+		fprintf(stderr, "Usage: minisplice ism <in.kan> <in.train>\n");
+		return 1;
+	}
+	ann = kann_load(argv[o.ind]);
+	e = fn_cali? msp_eval_read(fn_cali) : msp_eval_read_kan(argv[o.ind]);
+	assert(ann && e);
+	sd = msp_sdata_read(argv[o.ind+1]);
+	msp_ism_sdata(ann, e, sd);
+	kann_delete(ann);
+	free(e);
+	msp_sdata_destroy(sd);
 	return 0;
 }
