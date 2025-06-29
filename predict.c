@@ -464,7 +464,6 @@ void msp_ism_sdata(kann_t *ann, const msp_eval_t *e, const msp_sdata_t *sd)
 				ia[k].i = j, ia[k++].c = c;
 			}
 		}
-		fprintf(stderr, "%d,%d\n", k, mb_sz);
 		assert(k == mb_sz);
 		kann_eval_out(ann);
 		y1 = ann->v[i_out]->x;
