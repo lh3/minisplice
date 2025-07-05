@@ -8,7 +8,7 @@ git clone https://github.com/lh3/minisplice
 cd minisplice && make
 
 # download vertebrate-insect pre-trained model and calibration data
-wget -O- https://zenodo.org/records/15670304/files/vi2-7k.tgz | tar zxf -
+wget -O- https://zenodo.org/records/15814006/files/vi2-7k.tgz | tar zxf -
 
 # compute the splice score for GT and AG sites; see below for model training
 ./minisplice predict -t16 -c vi2-7k.kan.cali vi2-7k.kan genome.fa.gz > score.tsv
@@ -18,7 +18,7 @@ miniprot -Iut16 --gff -j2 --spsc=score.tsv genome.fa.gz proteins.faa > align.gff
 minimap2 -cxsplice:hq -t16 --spsc=score.tsv genome.fa.gz rna-seq.fq > align.paf
 
 # use pre-calculated human or Drosophila scores
-wget https://zenodo.org/records/15670304/files/human-GRCh38.vi2-7k.tsv.gz
+wget https://zenodo.org/records/15814006/files/human-GRCh38.vi2-7k.tsv.gz
 miniprot -Iut16 --gff -j2 --spsc human-GRCh38.vi2-7k.tsv.gz hg38.fa proteins.faa
 ```
 
