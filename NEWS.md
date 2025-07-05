@@ -1,5 +1,20 @@
+Release 0.3-r110 (5 July 2025)
+------------------------------
+
+Notable changes:
+
+ * Improvement: automatically load the .cali file based on the name of the
+   model file.
+
+ * Bugfix: fixed a potential off-by-one error but apparently this has not
+   happened.
+
+(0.3: 5 July 2025, r110)
+
+
+
 Release 0.2-r104 (15 June 2025)
----------------------------
+-------------------------------
 
 Notable changes:
 
