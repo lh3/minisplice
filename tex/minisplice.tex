@@ -442,7 +442,7 @@ other features such as 2 and 13 likely capture compositions of introns and exons
 Intronic sequences around acceptors appear to provide more signals than around donors.
 This might be related to branch points which are located within tens of basepairs upstream to acceptors.
 The activation difference fades away beyond 100bp around splice sites especially within introns.
-It might explain why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
+It is possibly why increasing window size from 202bp to 302bp has minor effect (Fig.~\ref{fig:6}b).
 
 We further used the values at the last max-pooling layer to generate the UMAP of a random subset of training samples (Fig.~\ref{fig:umap}).
 The UMAP separated the training samples into three large clusters which correspond to
@@ -450,6 +450,9 @@ positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, mammals and birds contain sites absent from fish and insect.
 We extracted splice sites in the UMAP that are specific to mammals and birds
 and found that most of them came from GC-rich introns.
+This specificity might explain
+why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
+but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
 
 To more directly investigate these GC-rich introns,
 we extracted orthologous intron pairs and compared their GC content (Fig.~\ref{fig:gc}).
@@ -457,7 +460,7 @@ We saw introns reaching 60\% GC in human but their orthologs in zebrafish are $<
 Consistent with our earlier observation in UMAP, few zebrafish introns are GC-rich.
 Although the GC content is overall higher in amphibians, not many introns can reach 60\% GC (Fig.~\ref{fig:gc}b).
 Birds have high-GC introns like human (Fig.~\ref{fig:gc}c).
-This is unrelated to warm- versus cold-blooded organisms~\citep{Bernardi:1985aa}
+This is unrelated to warm- versus cold-blooded organisms per isochore theory~\citep{Bernardi:1985aa}
 because reptiles also have GC-rich introns (Fig.~\ref{fig:gc}d).
 
 %The UMAP for human, zebrafish and fruitly reveals a similar pattern.
@@ -470,11 +473,9 @@ because reptiles also have GC-rich introns (Fig.~\ref{fig:gc}d).
 
 GC-rich introns are known to exist in human~\citep{Wang:2011aa}
 and may help stabilize RNA secondary structure~\citep{Zhang:2011aa}.
-They are more likely to be retained~\citep{Sibley:2016vh} than GC-poor introns
-and tend to be located in the nuclear center~\citep{Choquet:2025aa}.
-Their specificity to mammals and birds might explain
-why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
-but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
+They are more likely to be retained than GC-poor introns~\citep{Sibley:2016vh},
+and they tend to be located in the nuclear center~\citep{Choquet:2025aa}
+which may be partly correlated with the higher CpG dentity in the center~\citep{Xie:2017aa,Tan:2018aa}.
 
 \subsection{Improving spliced alignment}
 
