@@ -289,6 +289,8 @@ mCanLup*       & \emph{Canis lupus baileyi}        & GCF\_048164855.1 \\
 mLagAlb*       & \emph{Lagenorhynchus albirostris} & GCF\_949774975.1 \\
 bAccGen*       & \emph{Astur gentilis}             & GCF\_929443795.1 \\
 bAnaAcu        & \emph{Anas acuta}                 & GCF\_963932015.1 \\
+bTaeGut        & \emph{Taeniopygia guttata}        & GCF\_048771995.1 \\
+rEmyOrb        & \emph{Emys orbicularis}           & GCF\_028017835.1 \\
 aDenEbr        & \emph{Dendropsophus ebraccatus}   & GCF\_027789765.1 \\
 fCarCar*       & \emph{Carassius carassius}        & GCF\_963082965.1 \\
 fPunPun        & \emph{Pungitius pungitius}        & GCF\_949316345.1 \\
@@ -309,7 +311,8 @@ RefSeq annotations used for non-model organisms whose labels
 follow the naming standard developed by the Darwin Tree of Life Project:
 prefix ``m'' stands for mammals,
 ``b'' for birds,
-``a'' for \emph{Amphibia} (e.g. frogs and newts),
+``r'' for reptiles,
+``a'' for amphibians,
 ``f'' for fish,
 ``s'' for sharks,
 ``ic'' for order \emph{Coleoptera} (beetles),
@@ -412,10 +415,22 @@ but we deemed the improvement is marginal and outweighed by the convenience
 of having one model across vertebrate and insect genomes.
 
 \begin{figure}[bt]
-\includegraphics[width=.48\textwidth]{umap}
+\includegraphics[width=\columnwidth]{umap}
 \caption{UMAP of the last max-pooling layer.
 Training data was downsampled to 20k splice sites with 10k positive and 10k negative sites.
 }\label{fig:umap}
+\end{figure}
+
+\begin{figure}[bt]
+\includegraphics[width=\columnwidth]{fig-gc}
+\caption{GC content of orthologous introns.
+Vertebrate protein sequences from Swiss-Prot are aligned to each genome with miniprot.
+Given two genomes, if a protein sequence is aligned with introns at the same position on the protein, the two aligned introns are considered orthologous to each other.
+{\bf (a)} Comparing percent GC content between orthologous human and zebrafish introns.
+{\bf (b)} Human versus hourglass tree frog (aDenEbr).
+{\bf (c)} Human versus zebra finch (bTaeGut).
+{\bf (d)} Zebra finch versus European pond turtle (rEmyOrb).
+}\label{fig:gc}
 \end{figure}
 
 Model vi2 considers 202bp sequences around splice sites.
@@ -433,16 +448,30 @@ We further used the values at the last max-pooling layer to generate the UMAP of
 The UMAP separated the training samples into three large clusters which correspond to
 positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, mammals and birds contain sites absent from fish and insect.
-The UMAP for human, zebrafish and fruitly reveals a similar pattern.
-We then extracted splice sites in the UMAP that are specific to human.
-We found most of the intron sequences close to the splice sites tended to be short and GC-rich.
-We randomly selected five human genes with GC-rich donor sites, including \emph{GAPDH}, \emph{ARHGEF19}, \emph{ABTB2}, \emph{CCAR2} and \emph{OGDH},
-and aligned their protein sequences to the zebrafish genome.
-Except \emph{CCAR2} which was aligned with low identity at 33\%,
-other genes all reserved the GC-rich junctions, though the corresponding zebrafish junctions had lower GC.
+We extracted splice sites in the UMAP that are specific to mammals and birds
+and found that most of them came from GC-rich introns.
+
+To more directly investigate these GC-rich introns,
+we extracted orthologous intron pairs and compared their GC content (Fig.~\ref{fig:gc}).
+We saw introns reaching 60\% GC in human but their orthologs in zebrafish are $<$40\% in GC (Fig.~\ref{fig:gc}a).
+Consistent with our earlier observation in UMAP, few zebrafish introns are GC-rich.
+Although the GC content is overall higher in amphibians, not many introns can reach 60\% GC (Fig.~\ref{fig:gc}b).
+Birds have high-GC introns like human (Fig.~\ref{fig:gc}c).
+This is unrelated to warm- versus cold-blooded organisms~\citep{Bernardi:1985aa}
+because reptiles also have GC-rich introns (Fig.~\ref{fig:gc}d).
+
+%The UMAP for human, zebrafish and fruitly reveals a similar pattern.
+%We then extracted splice sites in the UMAP that are specific to human.
+%We found most of the intron sequences close to the splice sites tended to be short and GC-rich.
+%We randomly selected five human genes with GC-rich donor sites, including \emph{GAPDH}, \emph{ARHGEF19}, \emph{ABTB2}, \emph{CCAR2} and \emph{OGDH},
+%and aligned their protein sequences to the zebrafish genome.
+%Except \emph{CCAR2} which was aligned with low identity at 33\%,
+%other genes all reserved the GC-rich junctions, though the corresponding zebrafish junctions had lower GC.
 
 GC-rich introns are known to exist in human~\citep{Wang:2011aa}
 and may help stabilize RNA secondary structure~\citep{Zhang:2011aa}.
+They are more likely to be retained~\citep{Sibley:2016vh} than GC-poor introns
+and tend to be located in the nuclear center~\citep{Choquet:2025aa}.
 Their specificity to mammals and birds might explain
 why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
 but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
