@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MSP_VERSION "0.3-r110"
+#define MSP_VERSION "0.3-r116-dirty"
 
 typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 
@@ -112,7 +112,7 @@ void msp_sdata_destroy(msp_sdata_t *d);
 
 // FASTX reader
 msp_file_t *msp_fastx_open(const char *fn);
-int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq);
+int64_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq);
 
 // BED reader
 msp_file_t *msp_bed_open(const char *fn);

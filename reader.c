@@ -90,10 +90,10 @@ msp_file_t *msp_fastx_open(const char *fn)
 	return f;
 }
 
-int32_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq)
+int64_t msp_fastx_read(msp_file_t *fp, msp_cstr_t *name, msp_cstr_t *seq)
 {
 	kseq_t *ks = (kseq_t*)fp->fp;
-	int ret;
+	long ret;
 	*name = 0, *seq = 0;
 	ret = kseq_read(ks);
 	if (ret > 0) {

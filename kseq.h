@@ -190,7 +190,7 @@ typedef struct __kstring_t {
    -2   truncated quality string
  */
 #define __KSEQ_READ(SCOPE) \
-	SCOPE int kseq_read(kseq_t *seq) \
+	SCOPE long kseq_read(kseq_t *seq) \
 	{ \
 		int c; \
 		kstream_t *ks = seq->f; \
@@ -228,7 +228,7 @@ typedef struct __kstring_t {
 		while (ks_getuntil2(ks, KS_SEP_LINE, &seq->qual, 0, 1) >= 0 && seq->qual.l < seq->seq.l); \
 		seq->last_char = 0;	/* we have not come to the next header line */ \
 		if (seq->seq.l != seq->qual.l) return -2; /* error: qual string is of a different length */ \
-		return seq->seq.l; \
+		return (long)seq->seq.l; \
 	}
 
 #define __KSEQ_TYPE(type_t) \

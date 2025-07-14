@@ -95,7 +95,7 @@ void msp_predict1(msp_pdata_t *t, kann_t *ann, int64_t len, const uint8_t *seq, 
 
 void msp_predict_print(kann_t *ann, msp_file_t *fx, const msp_eval_t *e, int32_t min_score, int32_t max_score, int32_t mb_sz, int32_t type)
 {
-	int32_t len;
+	int64_t len;
 	const char *name, *seq;
 	msp_pdata_t t = {0,0,0};
 	kstring_t out = {0,0,0};
