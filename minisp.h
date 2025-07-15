@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-#define MSP_VERSION "0.3-r117-dirty"
+#define MSP_VERSION "0.4-r118"
 
 typedef enum { MSP_FT_FASTX, MSP_FT_LINE } msp_ft_t;
 

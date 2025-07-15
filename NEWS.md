@@ -1,3 +1,17 @@
+Release 0.4-r118 (15 July 2025)
+-------------------------------
+
+Notable changes:
+
+ * Bugfix: minisplice supports contigs longer than 2Gb.
+
+ * Change: don't output scores -6 or lower. This reduces splice score file
+   sizes by 30% at almost no cost of miniprot accuracy.
+
+(0.4: 15 July 2025, r118)
+
+
+
 Release 0.3-r110 (5 July 2025)
 ------------------------------
 
