@@ -343,7 +343,7 @@ void msp_eval_print(FILE *fp, const msp_eval_t *e)
 int main_predict(int argc, char *argv[])
 {
 	ketopt_t o = KETOPT_INIT;
-	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -7, max_score = 13, print_cali = 0, print_max1d = 0;
+	int32_t c, n_thread = 1, mb_sz = 128, type = 0, train_fmt = 0, min_score = -6, max_score = 13, print_cali = 0, print_max1d = 0;
 	kann_t *ann;
 	char *fn_bed = 0, *fn_cali = 0;
 	float step = 0.02f;
