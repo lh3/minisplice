@@ -274,6 +274,11 @@ Users can provide splice scores estimated by other means in principle.
 
 We evaluated the accuracy of trained models using Receiver Operating Characteristic (ROC) curves
 where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
+In the ROC plot, we focused on region with sensitivity above 50\% and false positive rate below 10\%
+because we intend to improve spliced alignment in this region.
+For each curve, we calculated rAUC, which is the area the under the ROC curve restricted to and scaled by this region.
+Due to scaling, ${\rm rAUC}\in[0,1]$.
+
 To find a small model that is generalized to multiple species and is fast to deploy,
 we experimented models under several settings.
 Our final model is trained on six insect genomes from five orders and seven vertebrate genomes.
@@ -353,6 +358,7 @@ and to test on basic annotations because non-model organisms probably do not hav
 \caption{Intra-species training.
 {\bf (a)} Models trained on different human annotations
 and tested on the Gencode basic annotation.
+Numbers in parentheses denote the rAUC, which is the Area Under the Curve restricted to the plotted region.
 {\bf (b)} Model trained from the longest human protein-coding transcripts
 and tested on different human annotations.
 {\bf (c)} Donor-only training versus joint donor-acceptor training.

@@ -52,78 +52,78 @@ plot "<grep ^BN icTenMoli-n.self.eval" u 10:9 t "icTenMoli ncbi (84k,5.9)" w lp 
 
 set out "roc-v-vi2.eps"
 set title "Trained on self / vert+ins (vi2); tested on vert"
-plot "<grep ^BN human.self.eval" u 10:9 t "human self" w lp ls 1 lw 2, \
-	"<grep ^BN human.vi2-7k.eval" u 10:9 t "human vi2" w lp ls 2 lw 2, \
-	"<grep ^BN bAnaAcu-n.self.eval" u 10:9 t "bAnaAcu self" w lp ls 7 lw 2, \
-	"<grep ^BN bAnaAcu-n.vi2-7k.eval" u 10:9 t "bAnaAcu vi2" w lp ls 8 lw 2, \
-	"<grep ^BN aDenEbr-n.self.eval" u 10:9 t "aDenEbr self" w lp ls 3 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr vi2" w lp ls 4 lw 2, \
-	"<grep ^BN fPunPun-n.self.eval" u 10:9 t "fPunPun self" w lp ls 5 lw 2, \
-	"<grep ^BN fPunPun-n.vi2-7k.eval" u 10:9 t "fPunPun vi2" w lp ls 6 lw 2, \
-	"<grep ^BN sMobHyp-n.self.eval" u 10:9 t "sMobHyp self" w lp ls 9 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp vi2" w lp ls 10 lw 2
+plot "<grep ^BN human.self.eval" u 10:9 t "human self (0.82)" w lp ls 1 lw 2, \
+	"<grep ^BN human.vi2-7k.eval" u 10:9 t "human vi2 (0.79)" w lp ls 2 lw 2, \
+	"<grep ^BN bAnaAcu-n.self.eval" u 10:9 t "bAnaAcu self (0.86)" w lp ls 7 lw 2, \
+	"<grep ^BN bAnaAcu-n.vi2-7k.eval" u 10:9 t "bAnaAcu vi2 (0.86)" w lp ls 8 lw 2, \
+	"<grep ^BN aDenEbr-n.self.eval" u 10:9 t "aDenEbr self (0.91)" w lp ls 3 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr vi2 (0.88)" w lp ls 4 lw 2, \
+	"<grep ^BN fPunPun-n.self.eval" u 10:9 t "fPunPun self (0.91)" w lp ls 5 lw 2, \
+	"<grep ^BN fPunPun-n.vi2-7k.eval" u 10:9 t "fPunPun vi2 (0.86)" w lp ls 6 lw 2, \
+	"<grep ^BN sMobHyp-n.self.eval" u 10:9 t "sMobHyp self (0.91)" w lp ls 9 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp vi2 (0.88)" w lp ls 10 lw 2
 
 set out "roc-v-v2-vi2.eps"
 set title "Trained on vert (v2) / vert+ins (vi2); tested on vert"
-plot "<grep ^BN human.v2-7k.eval" u 10:9 t "human v2" w lp ls 1 lw 2, \
-	"<grep ^BN human.vi2-7k.eval" u 10:9 t "human vi2" w lp ls 2 lw 2, \
-	"<grep ^BN bAnaAcu-n.v2-7k.eval" u 10:9 t "bAnaAcu v2" w lp ls 7 lw 2, \
-	"<grep ^BN bAnaAcu-n.vi2-7k.eval" u 10:9 t "bAnaAcu vi2" w lp ls 8 lw 2, \
-	"<grep ^BN aDenEbr-n.v2-7k.eval" u 10:9 t "aDenEbr v2" w lp ls 3 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr vi2" w lp ls 4 lw 2, \
-	"<grep ^BN fPunPun-n.v2-7k.eval" u 10:9 t "fPunPun v2" w lp ls 5 lw 2, \
-	"<grep ^BN fPunPun-n.vi2-7k.eval" u 10:9 t "fPunPun vi2" w lp ls 6 lw 2, \
-	"<grep ^BN sMobHyp-n.v2-7k.eval" u 10:9 t "sMobHyp v2" w lp ls 9 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp vi2" w lp ls 10 lw 2
+plot "<grep ^BN human.v2-7k.eval" u 10:9 t "human v2 (0.81)" w lp ls 1 lw 2, \
+	"<grep ^BN human.vi2-7k.eval" u 10:9 t "human vi2 (0.79)" w lp ls 2 lw 2, \
+	"<grep ^BN bAnaAcu-n.v2-7k.eval" u 10:9 t "bAnaAcu v2 (0.88)" w lp ls 7 lw 2, \
+	"<grep ^BN bAnaAcu-n.vi2-7k.eval" u 10:9 t "bAnaAcu vi2 (0.86)" w lp ls 8 lw 2, \
+	"<grep ^BN aDenEbr-n.v2-7k.eval" u 10:9 t "aDenEbr v2 (0.88)" w lp ls 3 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr vi2 (0.88)" w lp ls 4 lw 2, \
+	"<grep ^BN fPunPun-n.v2-7k.eval" u 10:9 t "fPunPun v2 (0.87)" w lp ls 5 lw 2, \
+	"<grep ^BN fPunPun-n.vi2-7k.eval" u 10:9 t "fPunPun vi2 (0.86)" w lp ls 6 lw 2, \
+	"<grep ^BN sMobHyp-n.v2-7k.eval" u 10:9 t "sMobHyp v2 (0.89)" w lp ls 9 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp vi2 (0.88)" w lp ls 10 lw 2
 
 set out "roc-i-vi2.eps"
 set title "Trained on self / vert+ins (vi2); tested on ins"
-plot "<grep ^BN icTenMoli-n.self.eval" u 10:9 t "*icTenMoli self" w lp ls 1 lw 2, \
-	"<grep ^BN icTenMoli-n.vi2-7k.eval" u 10:9 t "*icTenMoli vi2" w lp ls 2 lw 2, \
-	"<grep ^BN idStoCalc-n.self.eval" u 10:9 t "idStoCalc self" w lp ls 7 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc vi2" w lp ls 8 lw 2, \
-	"<grep ^BN ihPlaCitr-n.self.eval" u 10:9 t "*ihPlaCitr self" w lp ls 3 lw 2, \
-	"<grep ^BN ihPlaCitr-n.vi2-7k.eval" u 10:9 t "*ihPlaCitr vi2" w lp ls 4 lw 2, \
-	"<grep ^BN ilOstNubi-n.self.eval" u 10:9 t "ilOstNubi self" w lp ls 5 lw 2, \
-	"<grep ^BN ilOstNubi-n.vi2-7k.eval" u 10:9 t "ilOstNubi vi2" w lp ls 6 lw 2, \
-	"<grep ^BN iyVesCrab-n.self.eval" u 10:9 t "iyVesCrab self" w lp ls 9 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab vi2" w lp ls 10 lw 2
+plot "<grep ^BN icTenMoli-n.self.eval" u 10:9 t "*icTenMoli self (0.82)" w lp ls 1 lw 2, \
+	"<grep ^BN icTenMoli-n.vi2-7k.eval" u 10:9 t "*icTenMoli vi2 (0.77)" w lp ls 2 lw 2, \
+	"<grep ^BN idStoCalc-n.self.eval" u 10:9 t "idStoCalc self (0.84)" w lp ls 7 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc vi2 (0.76)" w lp ls 8 lw 2, \
+	"<grep ^BN ihPlaCitr-n.self.eval" u 10:9 t "*ihPlaCitr self (0.89)" w lp ls 3 lw 2, \
+	"<grep ^BN ihPlaCitr-n.vi2-7k.eval" u 10:9 t "*ihPlaCitr vi2 (0.83)" w lp ls 4 lw 2, \
+	"<grep ^BN ilOstNubi-n.self.eval" u 10:9 t "ilOstNubi self (0.89)" w lp ls 5 lw 2, \
+	"<grep ^BN ilOstNubi-n.vi2-7k.eval" u 10:9 t "ilOstNubi vi2 (0.86)" w lp ls 6 lw 2, \
+	"<grep ^BN iyVesCrab-n.self.eval" u 10:9 t "iyVesCrab self (0.84)" w lp ls 9 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab vi2 (0.78)" w lp ls 10 lw 2
 
 set out "roc-i-i2-vi2.eps"
 set title "Trained on ins (i2) / vert+ins (vi2); tested on ins"
-plot "<grep ^BN icTenMoli-n.i2-7k.eval" u 10:9 t "*icTenMoli i2" w lp ls 1 lw 2, \
-	"<grep ^BN icTenMoli-n.vi2-7k.eval" u 10:9 t "*icTenMoli vi2" w lp ls 2 lw 2, \
-	"<grep ^BN idStoCalc-n.i2-7k.eval" u 10:9 t "idStoCalc i2" w lp ls 7 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc vi2" w lp ls 8 lw 2, \
-	"<grep ^BN ihPlaCitr-n.i2-7k.eval" u 10:9 t "*ihPlaCitr i2" w lp ls 3 lw 2, \
-	"<grep ^BN ihPlaCitr-n.vi2-7k.eval" u 10:9 t "*ihPlaCitr vi2" w lp ls 4 lw 2, \
-	"<grep ^BN ilOstNubi-n.i2-7k.eval" u 10:9 t "ilOstNubi i2" w lp ls 5 lw 2, \
-	"<grep ^BN ilOstNubi-n.vi2-7k.eval" u 10:9 t "ilOstNubi vi2" w lp ls 6 lw 2, \
-	"<grep ^BN iyVesCrab-n.i2-7k.eval" u 10:9 t "iyVesCrab i2" w lp ls 9 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab vi2" w lp ls 10 lw 2
+plot "<grep ^BN icTenMoli-n.i2-7k.eval" u 10:9 t "*icTenMoli i2 (0.81)" w lp ls 1 lw 2, \
+	"<grep ^BN icTenMoli-n.vi2-7k.eval" u 10:9 t "*icTenMoli vi2 (0.77)" w lp ls 2 lw 2, \
+	"<grep ^BN idStoCalc-n.i2-7k.eval" u 10:9 t "idStoCalc i2 (0.77)" w lp ls 7 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc vi2 (0.76)" w lp ls 8 lw 2, \
+	"<grep ^BN ihPlaCitr-n.i2-7k.eval" u 10:9 t "*ihPlaCitr i2 (0.85)" w lp ls 3 lw 2, \
+	"<grep ^BN ihPlaCitr-n.vi2-7k.eval" u 10:9 t "*ihPlaCitr vi2 (0.83)" w lp ls 4 lw 2, \
+	"<grep ^BN ilOstNubi-n.i2-7k.eval" u 10:9 t "ilOstNubi i2 (0.87)" w lp ls 5 lw 2, \
+	"<grep ^BN ilOstNubi-n.vi2-7k.eval" u 10:9 t "ilOstNubi vi2 (0.86)" w lp ls 6 lw 2, \
+	"<grep ^BN iyVesCrab-n.i2-7k.eval" u 10:9 t "iyVesCrab i2 (0.81)" w lp ls 9 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab vi2 (0.78)" w lp ls 10 lw 2
 
 set out "roc-vi2-102.eps"
 set title "202bp vs 102bp window"
-plot "<grep ^BN human.vi2-7k.eval" u 10:9 t "human 202" w lp ls 1 lw 2, \
-	"<grep ^BN human.vi2a-7k.eval" u 10:9 t "human 102" w lp ls 2 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr 202" w lp ls 7 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2a-7k.eval" u 10:9 t "aDenEbr 102" w lp ls 8 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp 202" w lp ls 3 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2a-7k.eval" u 10:9 t "sMobHyp 102" w lp ls 4 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc 202" w lp ls 5 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2a-7k.eval" u 10:9 t "idStoCalc 102" w lp ls 6 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab 202" w lp ls 9 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2a-7k.eval" u 10:9 t "iyVesCrab 102" w lp ls 10 lw 2
+plot "<grep ^BN human.vi2-7k.eval" u 10:9 t "human 202 (0.79)" w lp ls 1 lw 2, \
+	"<grep ^BN human.vi2a-7k.eval" u 10:9 t "human 102 (0.75)" w lp ls 2 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr 202 (0.88)" w lp ls 7 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2a-7k.eval" u 10:9 t "aDenEbr 102 (0.84)" w lp ls 8 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp 202 (0.88)" w lp ls 3 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2a-7k.eval" u 10:9 t "sMobHyp 102 (0.84)" w lp ls 4 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc 202 (0.76)" w lp ls 5 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2a-7k.eval" u 10:9 t "idStoCalc 102 (0.69)" w lp ls 6 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab 202 (0.78)" w lp ls 9 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2a-7k.eval" u 10:9 t "iyVesCrab 102 (0.71)" w lp ls 10 lw 2
 
 set out "roc-vi2-302.eps"
 set title "202bp vs 302bp window"
-plot "<grep ^BN human.vi2-7k.eval" u 10:9 t "human 202" w lp ls 1 lw 2, \
-	"<grep ^BN human.vi2b-7k.eval" u 10:9 t "human 302" w lp ls 2 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr 202" w lp ls 7 lw 2, \
-	"<grep ^BN aDenEbr-n.vi2b-7k.eval" u 10:9 t "aDenEbr 302" w lp ls 8 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp 202" w lp ls 3 lw 2, \
-	"<grep ^BN sMobHyp-n.vi2b-7k.eval" u 10:9 t "sMobHyp 302" w lp ls 4 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc 202" w lp ls 5 lw 2, \
-	"<grep ^BN idStoCalc-n.vi2b-7k.eval" u 10:9 t "idStoCalc 302" w lp ls 6 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab 202" w lp ls 9 lw 2, \
-	"<grep ^BN iyVesCrab-n.vi2b-7k.eval" u 10:9 t "iyVesCrab 302" w lp ls 10 lw 2
+plot "<grep ^BN human.vi2-7k.eval" u 10:9 t "human 202 (0.79)" w lp ls 1 lw 2, \
+	"<grep ^BN human.vi2b-7k.eval" u 10:9 t "human 302 (0.81)" w lp ls 2 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2-7k.eval" u 10:9 t "aDenEbr 202 (0.88)" w lp ls 7 lw 2, \
+	"<grep ^BN aDenEbr-n.vi2b-7k.eval" u 10:9 t "aDenEbr 302 (0.88)" w lp ls 8 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2-7k.eval" u 10:9 t "sMobHyp 202 (0.88)" w lp ls 3 lw 2, \
+	"<grep ^BN sMobHyp-n.vi2b-7k.eval" u 10:9 t "sMobHyp 302 (0.90)" w lp ls 4 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2-7k.eval" u 10:9 t "idStoCalc 202 (0.76)" w lp ls 5 lw 2, \
+	"<grep ^BN idStoCalc-n.vi2b-7k.eval" u 10:9 t "idStoCalc 302 (0.76)" w lp ls 6 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2-7k.eval" u 10:9 t "iyVesCrab 202 (0.78)" w lp ls 9 lw 2, \
+	"<grep ^BN iyVesCrab-n.vi2b-7k.eval" u 10:9 t "iyVesCrab 302 (0.80)" w lp ls 10 lw 2
