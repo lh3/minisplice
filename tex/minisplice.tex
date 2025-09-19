@@ -274,7 +274,7 @@ Users can provide splice scores estimated by other means in principle.
 
 We evaluated the accuracy of trained models using Receiver Operating Characteristic (ROC) curves
 where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
-In the ROC plot, we focused on region with sensitivity above 50\% and false positive rate below 10\%
+In the ROC plot, we focused on the region with sensitivity above 50\% and false positive rate below 10\%
 because we intend to improve spliced alignment in this region.
 For each curve, we calculated rAUC, which is the area the under the ROC curve restricted to and scaled by this region.
 Due to scaling, ${\rm rAUC}\in[0,1]$.
@@ -358,7 +358,7 @@ and to test on basic annotations because non-model organisms probably do not hav
 \caption{Intra-species training.
 {\bf (a)} Models trained on different human annotations
 and tested on the Gencode basic annotation.
-Numbers in parentheses denote the rAUC, which is the Area Under the Curve restricted to the plotted region.
+Numbers in parentheses denote rAUC, which is the Area Under the Curve restricted to the plotted region.
 {\bf (b)} Model trained from the longest human protein-coding transcripts
 and tested on different human annotations.
 {\bf (c)} Donor-only training versus joint donor-acceptor training.
@@ -424,7 +424,7 @@ Note that vi2 is not trained on amphibian or shark genomes but it still accurate
 It is capturing common signals across large evolutionary distance while reducing overfitting to individual species.
 We also trained a vertebrate-only model (v2) and an insect-only model (i2).
 They outperformed vi2 for vertebrate and insect genomes, respectively (Fig.~\ref{fig:5}c,d),
-but we deemed the improvement is marginal and outweighed by the convenience
+but we deemed the improvement is small and outweighed by the convenience
 of having one model across vertebrate and insect genomes.
 
 \begin{figure}[bt]
@@ -436,10 +436,10 @@ Training data was downsampled to 20k splice sites with 10k positive and 10k nega
 
 \begin{figure}[bt]
 \includegraphics[width=\columnwidth]{fig8}
-\caption{GC content of orthologous introns.
+\caption{GC content of homologous introns.
 Vertebrate protein sequences from Swiss-Prot are aligned to each genome with miniprot.
-Given two genomes, if a protein sequence is aligned with introns at the same position on the protein, the two aligned introns are considered orthologous to each other.
-{\bf (a)} Comparing percent GC content between orthologous human and zebrafish introns.
+Given two genomes, if a protein sequence is aligned with introns at the same position on the protein, the two aligned introns are considered homologous to each other.
+{\bf (a)} Comparing percent GC content between homologous human and zebrafish introns.
 {\bf (b)} Human versus hourglass tree frog (aDenEbr).
 {\bf (c)} Human versus zebra finch (bTaeGut).
 {\bf (d)} Zebra finch versus European pond turtle (rEmyOrb).
@@ -447,8 +447,8 @@ Given two genomes, if a protein sequence is aligned with introns at the same pos
 \end{figure}
 
 Model vi2 considers 202bp sequences around splice sites.
-We tried to reduce the window size to 102bp but the accuracy noticeably dropped (Fig.~\ref{fig:6}a).
-Increasing the window size to 302bp, on the other hand, only had minor effect (Fig.~\ref{fig:6}b).
+We tried to reduce the window size to 102bp but the accuracy dropped (Fig.~\ref{fig:6}a).
+Increasing the window size to 302bp, on the other hand, only had a small effect (Fig.~\ref{fig:6}b).
 To understand what signals the model is learning, we visualized the activation rates at the last max-pooling layer which has 16 features (Fig.~\ref{fig:6}c,d).
 While some features such as 4 and 7 focus on signals at splice sites,
 other features such as 2 and 13 likely capture compositions of introns and exons.
@@ -469,8 +469,8 @@ why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
 but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
 
 To more directly investigate these GC-rich introns,
-we extracted orthologous intron pairs and compared their GC content (Fig.~\ref{fig:gc}).
-We saw introns reaching 60\% GC in human but their orthologs in zebrafish are $<$40\% in GC (Fig.~\ref{fig:gc}a).
+we extracted homologous intron pairs and compared their GC content (Fig.~\ref{fig:gc}).
+We saw introns reaching 60\% GC in human but their homologs in zebrafish are $<$40\% in GC (Fig.~\ref{fig:gc}a).
 Consistent with our earlier observation in UMAP, few zebrafish introns are GC-rich.
 Although the GC content is overall higher in amphibians, not many introns can reach 60\% GC (Fig.~\ref{fig:gc}b).
 Birds have high-GC introns like human (Fig.~\ref{fig:gc}c).
