@@ -1,3 +1,5 @@
+[![Release](https://img.shields.io/github/v/release/lh3/minisplice)](https://github.com/lh3/minisplice/releases)
+[![BioConda](https://img.shields.io/conda/dn/bioconda/minisplice.svg?style=flag&label=BioConda)](https://anaconda.org/bioconda/minisplice)
 [![Preprint](https://img.shields.io/badge/preprint-10.48550/arXiv.2506.12986-blue)](https://doi.org/10.48550/arXiv.2506.12986)
 [![Resource](https://img.shields.io/badge/resource-10.5281/zenodo.15446314-blue)](https://doi.org/10.5281/zenodo.15446314)
 
