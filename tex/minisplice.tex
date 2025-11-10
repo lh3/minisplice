@@ -117,7 +117,8 @@ Intra-species mRNA-to-genome aligners such as BLAT~\citep{Kent:2002jk}, GMAP~\ci
 because alignment itself provides strong evidence and ambiguity shown in Fig~\ref{fig:1} is rare.
 Minimap2~\citep{Li:2018ab} prefers the {\tt GTR..YAG} consensus~\citep{Irimia:2008aa}.
 This helps to improve the alignment of noisy long RNA-seq reads.
-GSNAP~\citep{Wu:2010uq} integrates MaxEnt~\citep{Yeo:2004aa} for scoring novel splice sites.
+GSNAP~\citep{Wu:2010uq} integrated MaxEnt~\citep{Yeo:2004aa} for scoring novel splice sites,
+and the feature was also added to GMAP.
 Protein-to-genome aligners tend to employ better models due to more ambiguous alignment given distant homologs.
 Miniprot~\citep{Li:2023ab} considers rarer {\tt GC..AG} and {\tt AT..AC} splice sites and optionally prioritizes on the {\tt G|GTR..YNYAG} consensus
 common in vertebrate and insect~\citep{Iwata:2011aa}, where ``{\tt |}'' indicates splice boundaries.
@@ -178,7 +179,7 @@ only if it comes from the opposite strand of an annotated gene~\citep{Chao:2024a
 In the rare case when two genes on opposite strands overlap with each other,
 we ignore the overlapping region.
 To balance positive and negative sites,
-we randomly selsect a subset of negative sites such that the positive-to-negative ratio is 1:3.
+we randomly select a subset of negative sites such that the positive-to-negative ratio is 1:3.
 For each positive or negative donor site,
 we extract 100bp immediately before and after {\tt GT}.
 The total length of sequences used for training is thus 202bp.
@@ -276,7 +277,7 @@ We evaluated the accuracy of trained models using Receiver Operating Characteris
 where we computed the true positive rate and false positive rate at different thresholds on raw model scores.
 In the ROC plot, we focused on the region with sensitivity above 50\% and false positive rate below 10\%
 because we intend to improve spliced alignment in this region.
-For each curve, we calculated rAUC, which is the area the under the ROC curve restricted to and scaled by this region.
+For each curve, we calculated rAUC, which is the area under the ROC curve restricted to and scaled by this region.
 Due to scaling, ${\rm rAUC}\in[0,1]$.
 
 To find a small model that is generalized to multiple species and is fast to deploy,
@@ -462,13 +463,14 @@ We further used the values at the last max-pooling layer to generate the UMAP of
 The UMAP separated the training samples into three large clusters which correspond to
 positive acceptor sites, negative sites and positive donor sites, respectively.
 Notably, some areas in the UMAP (the two red circles) only contain splice sites from mammals and birds but rarely from fish and insect.
-We extracted splice sites in these areas
-and found most of them came from GC-rich introns.
+We extracted human splice sites in these areas
+and found the GC content of the 100bp intronic sequences following the donor sites
+reaches 64\%, much higher than the genome average of $\sim$40\% in human.
 The presence of these areas might explain
 why fish and insect models do not work well for mammals (Fig.~\ref{fig:4}a)
 but mammalian models tend to work better for non-mammals~\citep{McCue:2024aa}.
 
-To more directly investigate these GC-rich introns,
+To more directly investigate the lack of GC-rich introns in fish and insects,
 we extracted homologous intron pairs and compared their GC content (Fig.~\ref{fig:gc}).
 We saw introns reaching 60\% GC in human but their homologs in zebrafish are $<$40\% in GC (Fig.~\ref{fig:gc}a).
 Consistent with our earlier observation in UMAP, few zebrafish introns are GC-rich.
@@ -485,11 +487,12 @@ because reptiles also have GC-rich introns (Fig.~\ref{fig:gc}d).
 %Except \emph{CCAR2} which was aligned with low identity at 33\%,
 %other genes all reserved the GC-rich junctions, though the corresponding zebrafish junctions had lower GC.
 
-GC-rich introns are known to exist in human~\citep{Wang:2011aa}
-and may help stabilize RNA secondary structure~\citep{Zhang:2011aa}.
+GC-rich introns are known to exist in human~\citep{Wang:2011aa}.
+They may help stabilize RNA secondary structure~\citep{Zhang:2011aa}
+may influence splice site recognition~\citep{Amit:2012aa}.
 They are more likely to be retained than GC-poor introns~\citep{Sibley:2016vh},
 and they tend to be located in the nuclear center~\citep{Choquet:2025aa}
-which may be partly correlated with the higher CpG dentity in the center~\citep{Xie:2017aa,Tan:2018aa}.
+which may be partly correlated with the higher CpG dentity in the nuclear center~\citep{Xie:2017aa,Tan:2018aa}.
 
 \subsection{Improving spliced alignment}
 
@@ -618,7 +621,7 @@ None declared.
 
 \section*{Funding}
 
-This work is supported by National Institute of Health grant R01HG010040 (to H.L.).
+This work is supported by National Institute of Health grant R01HG010040 and R01HG014175 (to H.L.).
 
 \section*{Data availability}
 

@@ -156,7 +156,7 @@ plot "<grep ^BN self/zebrafish.self.eval" u 10:9 t "Zebrafish-to-Zebrafish (0.89
 
 set out "cross-insect.eps"
 set title "Cross-species: fruitfly vs mosquito"
-plot "<grep ^BN self/fruitfly.self.eval" u 10:9 t "Fruitfly-to-fruitfly" w lp ls 1 lw 2, \
-	"<grep ^BN cross/fruitfly-mosquito.eval" u 10:9 t "Mosquito-to-fruitfly" w lp ls 2 lw 2, \
-	"<grep ^BN self/mosquito.self.eval" u 10:9 t "Mosquito-to-mosquito" w lp ls 7 lw 2, \
-	"<grep ^BN cross/mosquito-fruitfly.eval" u 10:9 t "Fruitfly-to-mosquito" w lp ls 8 lw 2
+plot "<grep ^BN self/fruitfly.self.eval" u 10:9 t "Fruitfly-to-fruitfly (0.82)" w lp ls 1 lw 2, \
+	"<grep ^BN cross/fruitfly-mosquito.eval" u 10:9 t "Mosquito-to-fruitfly (0.75)" w lp ls 2 lw 2, \
+	"<grep ^BN self/mosquito.self.eval" u 10:9 t "Mosquito-to-mosquito (0.87)" w lp ls 7 lw 2, \
+	"<grep ^BN cross/mosquito-fruitfly.eval" u 10:9 t "Fruitfly-to-mosquito (0.80)" w lp ls 8 lw 2
